@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -176,7 +177,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       const itemType = allItems[Math.floor(Math.random() * allItems.length)];
       game.collectibles.push({
         x: canvas.width,
-        y: itemType.isCollectible ? 200 : 205, // Both at ground level for easier collection
+        y: itemType.isCollectible ? 205 : 210, // Collectibles slightly lower for easier collection
         width: 25,
         height: 25,
         type: itemType.type,
@@ -193,19 +194,19 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       ctx.font = '25px Arial';
       ctx.fillText(item.type, item.x, item.y + 20);
 
-      // Improved collision detection
+      // Improved collision detection with larger hitbox for collectibles
       const dinoHitbox = {
-        x: game.dino.x + 8,
-        y: game.dino.y + 8,
-        width: game.dino.width - 16,
-        height: game.dino.height - 16
+        x: game.dino.x + 5,
+        y: game.dino.y + 5,
+        width: game.dino.width - 10,
+        height: game.dino.height - 10
       };
 
       const itemHitbox = {
-        x: item.x + 5,
-        y: item.y + 5,
-        width: item.width - 10,
-        height: item.height - 10
+        x: item.x + (item.isCollectible ? 2 : 5),
+        y: item.y + (item.isCollectible ? 2 : 5),
+        width: item.width - (item.isCollectible ? 4 : 10),
+        height: item.height - (item.isCollectible ? 4 : 10)
       };
 
       if (
