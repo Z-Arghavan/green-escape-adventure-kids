@@ -17,11 +17,12 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const [score, setScore] = useState(0);
   const [gamesPlayed, setGamesPlayed] = useState(0);
   const [showCode, setShowCode] = useState(false);
+  const [inventory, setInventory] = useState<Array<{type: string, name: string}>>([]);
 
   const translations = {
     en: {
       title: "Sustainable Dino Game",
-      instructions: "Press SPACE or click to jump over obstacles! Help promote sustainability!",
+      instructions: "Collect green energy items and avoid waste! Help promote sustainability!",
       spaceInstructions: "Use SPACE key or click the game area to jump! Double jump available!",
       start: "Start Game",
       restart: "Restart Game",
@@ -32,11 +33,13 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       completed: "Well done! You've completed all 3 games!",
       yourCode: "Your code is:",
       useThisCode: "Use this code for the next challenge!",
-      back: "Back to Instructions"
+      back: "Back to Instructions",
+      inventory: "Collected Items:",
+      collected: "Collected"
     },
     nl: {
       title: "Duurzame Dino Spel",
-      instructions: "Druk op SPATIE of klik om over obstakels te springen! Help duurzaamheid promoten!",
+      instructions: "Verzamel groene energie items en vermijd afval! Help duurzaamheid promoten!",
       spaceInstructions: "Gebruik de SPATIE toets of klik op het speelveld om te springen! Dubbel springen mogelijk!",
       start: "Start Spel",
       restart: "Herstart Spel",
@@ -47,7 +50,9 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       completed: "Goed gedaan! Je hebt alle 3 spellen voltooid!",
       yourCode: "Je code is:",
       useThisCode: "Gebruik deze code voor de volgende uitdaging!",
-      back: "Terug naar Instructies"
+      back: "Terug naar Instructies",
+      inventory: "Verzamelde Items:",
+      collected: "Verzameld"
     }
   };
 
@@ -55,31 +60,40 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   // Game objects
   const gameRef = useRef({
-    dino: { x: 50, y: 160, width: 30, height: 30, velocityY: 0, isJumping: false, jumpCount: 0 },
-    obstacles: [] as Array<{ x: number; y: number; width: number; height: number; type: string }>,
+    dino: { x: 50, y: 160, width: 25, height: 25, velocityY: 0, isJumping: false, jumpCount: 0 },
+    collectibles: [] as Array<{ x: number; y: number; width: number; height: number; type: string; name: string; isCollectible: boolean }>,
     gameSpeed: 2.5,
     score: 0,
     gameRunning: false
   });
 
+  const collectibleTypes = [
+    { type: '♻️', name: 'Recycling Symbol', isCollectible: true },
+    { type: '🌱', name: 'Green Plant', isCollectible: true },
+    { type: '⚡', name: 'Clean Energy', isCollectible: true },
+    { type: '🌿', name: 'Natural Leaf', isCollectible: true },
+    { type: '🌍', name: 'Earth Care', isCollectible: true },
+    { type: '💡', name: 'Energy Efficient Bulb', isCollectible: true }
+  ];
+
   const obstacleTypes = [
-    { type: '♻️', name: 'recycle' },
-    { type: '🌱', name: 'plant' },
-    { type: '⚡', name: 'energy' },
-    { type: '🌿', name: 'leaf' },
-    { type: '🌍', name: 'earth' },
-    { type: '💡', name: 'bulb' }
+    { type: '🗑️', name: 'Trash Bin', isCollectible: false },
+    { type: '🚗', name: 'Pollution Car', isCollectible: false },
+    { type: '🏭', name: 'Factory Smoke', isCollectible: false },
+    { type: '💨', name: 'Air Pollution', isCollectible: false },
+    { type: '🛢️', name: 'Oil Barrel', isCollectible: false }
   ];
 
   const resetGame = useCallback(() => {
     const game = gameRef.current;
-    game.dino = { x: 50, y: 160, width: 30, height: 30, velocityY: 0, isJumping: false, jumpCount: 0 };
-    game.obstacles = [];
+    game.dino = { x: 50, y: 160, width: 25, height: 25, velocityY: 0, isJumping: false, jumpCount: 0 };
+    game.collectibles = [];
     game.gameSpeed = 2.5;
     game.score = 0;
     game.gameRunning = true;
     setScore(0);
     setGameState('playing');
+    setInventory([]);
   }, []);
 
   const startGame = useCallback(() => {
@@ -129,49 +143,74 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     ctx.fillStyle = '#8B5CF6';
     ctx.fillRect(0, 190, canvas.width, 10);
 
-    // Draw dino
-    ctx.fillStyle = '#22C55E';
-    ctx.fillRect(game.dino.x, game.dino.y, game.dino.width, game.dino.height);
-    
-    // Add simple dino details
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(game.dino.x + 20, game.dino.y + 6, 6, 6); // eye
-    ctx.fillStyle = '#000';
-    ctx.fillRect(game.dino.x + 21, game.dino.y + 7, 4, 4); // pupil
+    // Draw dino using dinosaur emoji
+    ctx.font = '25px Arial';
+    ctx.fillText('🦕', game.dino.x, game.dino.y + 20);
 
-    // Spawn obstacles (reduced frequency)
+    // Spawn items (both collectibles and obstacles)
     if (Math.random() < 0.003) {
-      const obstacleType = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
-      game.obstacles.push({
+      const allItems = [...collectibleTypes, ...obstacleTypes];
+      const itemType = allItems[Math.floor(Math.random() * allItems.length)];
+      game.collectibles.push({
         x: canvas.width,
-        y: 165,
-        width: 25,
-        height: 25,
-        type: obstacleType.type
+        y: itemType.isCollectible ? 140 : 165, // Collectibles higher up, obstacles on ground
+        width: 20,
+        height: 20,
+        type: itemType.type,
+        name: itemType.name,
+        isCollectible: itemType.isCollectible
       });
     }
 
-    // Update and draw obstacles
-    game.obstacles = game.obstacles.filter(obstacle => {
-      obstacle.x -= game.gameSpeed;
+    // Update and draw items
+    game.collectibles = game.collectibles.filter(item => {
+      item.x -= game.gameSpeed;
 
-      // Draw obstacle
-      ctx.font = '25px Arial';
-      ctx.fillText(obstacle.type, obstacle.x, obstacle.y + 20);
+      // Draw item
+      ctx.font = '20px Arial';
+      ctx.fillText(item.type, item.x, item.y + 15);
 
-      // Collision detection
+      // Improved collision detection with smaller hitbox
+      const dinoHitbox = {
+        x: game.dino.x + 5,
+        y: game.dino.y + 5,
+        width: game.dino.width - 10,
+        height: game.dino.height - 10
+      };
+
+      const itemHitbox = {
+        x: item.x + 3,
+        y: item.y + 3,
+        width: item.width - 6,
+        height: item.height - 6
+      };
+
       if (
-        game.dino.x < obstacle.x + obstacle.width &&
-        game.dino.x + game.dino.width > obstacle.x &&
-        game.dino.y < obstacle.y + obstacle.height &&
-        game.dino.y + game.dino.height > obstacle.y
+        dinoHitbox.x < itemHitbox.x + itemHitbox.width &&
+        dinoHitbox.x + dinoHitbox.width > itemHitbox.x &&
+        dinoHitbox.y < itemHitbox.y + itemHitbox.height &&
+        dinoHitbox.y + dinoHitbox.height > itemHitbox.y
       ) {
-        game.gameRunning = false;
-        setGameState('gameOver');
-        return false;
+        if (item.isCollectible) {
+          // Collect the item
+          setInventory(prev => {
+            const existing = prev.find(inv => inv.type === item.type);
+            if (!existing) {
+              return [...prev, { type: item.type, name: item.name }];
+            }
+            return prev;
+          });
+          game.score += 10; // Bonus points for collecting
+          return false; // Remove from game
+        } else {
+          // Hit an obstacle - game over
+          game.gameRunning = false;
+          setGameState('gameOver');
+          return false;
+        }
       }
 
-      return obstacle.x > -obstacle.width;
+      return item.x > -item.width;
     });
 
     // Update score
@@ -298,6 +337,19 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
               <span>{t.gamesLeft}: {3 - gamesPlayed}</span>
             </div>
           </div>
+
+          {inventory.length > 0 && (
+            <div className="mb-4 p-4 bg-green-100 rounded-lg">
+              <h3 className="font-bold text-green-800 mb-2">{t.inventory}</h3>
+              <div className="flex flex-wrap gap-2">
+                {inventory.map((item, index) => (
+                  <span key={index} className="bg-white px-3 py-1 rounded-full text-sm border">
+                    {item.type} {item.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-center mb-6">
             <canvas
