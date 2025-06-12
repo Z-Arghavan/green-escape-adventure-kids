@@ -22,8 +22,10 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     en: {
       title: "Sustainable Dino Game",
       instructions: "Press SPACE or click to jump over trash! Help clean the environment!",
+      spaceInstructions: "Use SPACE key or click the game area to jump!",
       start: "Start Game",
-      restart: "Try Again",
+      restart: "Restart Game",
+      tryAgain: "Try Again",
       gameOver: "Game Over!",
       score: "Score",
       gamesLeft: "Games left",
@@ -35,8 +37,10 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     nl: {
       title: "Duurzame Dino Spel",
       instructions: "Druk op SPATIE of klik om over afval te springen! Help het milieu schoon te maken!",
+      spaceInstructions: "Gebruik de SPATIE toets of klik op het speelveld om te springen!",
       start: "Start Spel",
-      restart: "Probeer Opnieuw",
+      restart: "Herstart Spel",
+      tryAgain: "Probeer Opnieuw",
       gameOver: "Game Over!",
       score: "Score",
       gamesLeft: "Spellen over",
@@ -78,6 +82,10 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   }, []);
 
   const startGame = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
+  const restartCurrentGame = useCallback(() => {
     resetGame();
   }, [resetGame]);
 
@@ -280,7 +288,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
         <CardContent className="p-8">
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">{t.title}</h1>
-            <p className="text-gray-600 mb-4">{t.instructions}</p>
+            <p className="text-gray-600 mb-2">{t.instructions}</p>
+            <p className="text-sm text-blue-600 font-semibold mb-4">{t.spaceInstructions}</p>
             <div className="flex justify-center gap-6 text-sm text-gray-600">
               <span>{t.score}: {score}</span>
               <span>{t.gamesLeft}: {3 - gamesPlayed}</span>
@@ -307,6 +316,17 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
               </Button>
             )}
 
+            {gameState === 'playing' && (
+              <Button 
+                onClick={restartCurrentGame}
+                variant="outline"
+                className="mx-2"
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                {t.restart}
+              </Button>
+            )}
+
             {gameState === 'gameOver' && (
               <div className="space-y-3">
                 <p className="text-xl font-bold text-red-600">{t.gameOver}</p>
@@ -317,7 +337,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
                     className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold px-8 py-3"
                   >
                     <RotateCcw className="mr-2 h-4 w-4" />
-                    {t.restart} ({2 - gamesPlayed} {t.gamesLeft})
+                    {t.tryAgain} ({2 - gamesPlayed} {t.gamesLeft})
                   </Button>
                 ) : (
                   <Button 
@@ -327,6 +347,14 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
                     Finish Game & Get Code
                   </Button>
                 )}
+                <Button 
+                  onClick={restartCurrentGame}
+                  variant="outline"
+                  className="ml-2"
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  {t.restart}
+                </Button>
               </div>
             )}
 
@@ -338,10 +366,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t.back}
             </Button>
-          </div>
-
-          <div className="mt-6 text-center text-sm text-gray-500">
-            <p>Press SPACE or click the game area to jump!</p>
           </div>
         </CardContent>
       </Card>
