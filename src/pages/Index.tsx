@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Globe, Key, Puzzle, Search, Users, Clock, Lightbulb, ArrowRight } from 'lucide-react';
-import ThreeBackground from '@/components/ThreeBackground';
 
 type Language = 'en' | 'nl';
 
@@ -83,7 +82,6 @@ const Index = () => {
   if (!showDescription) {
     return (
       <div className="min-h-screen relative overflow-hidden">
-        <ThreeBackground />
         <div className="relative z-10 min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
           <div className="text-center space-y-8 animate-fade-in">
             <div className="space-y-4">
@@ -138,7 +136,6 @@ const Index = () => {
   if (!selectedLanguage) {
     return (
       <div className="min-h-screen relative overflow-hidden">
-        <ThreeBackground />
         <div className="relative z-10 min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
           <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-md mx-auto">
             <CardContent className="p-8 text-center space-y-6">
@@ -178,7 +175,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <ThreeBackground />
       <div className="relative z-10 min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 p-4">
         <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
           <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0">
