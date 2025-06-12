@@ -17,20 +17,25 @@ const FloatingObject = ({ position, color, type = 'sphere' }: { position: [numbe
   const renderShape = () => {
     switch (type) {
       case 'box':
-        return <Box ref={meshRef} args={[0.5, 0.5, 0.5]} material-color={color} />;
+        return <Box ref={meshRef} args={[0.5, 0.5, 0.5]}>
+          <meshStandardMaterial color={color} />
+        </Box>;
       case 'torus':
-        return <Torus ref={meshRef} args={[0.3, 0.15, 16, 100]} material-color={color} />;
+        return <Torus ref={meshRef} args={[0.3, 0.15, 16, 100]}>
+          <meshStandardMaterial color={color} />
+        </Torus>;
       default:
-        return <Sphere ref={meshRef} args={[0.3]} material-color={color} />;
+        return <Sphere ref={meshRef} args={[0.3]}>
+          <meshStandardMaterial color={color} />
+        </Sphere>;
     }
   };
 
   return (
     <Float speed={2} rotationIntensity={1} floatIntensity={2}>
-      <mesh position={position}>
+      <group position={position}>
         {renderShape()}
-        <meshStandardMaterial color={color} />
-      </mesh>
+      </group>
     </Float>
   );
 };
