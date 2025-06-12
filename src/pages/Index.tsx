@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Globe, Key, Puzzle, Search, Users, Clock, Lightbulb, ArrowRight } from 'lucide-react';
+import DinoGame from '@/components/DinoGame';
 
 type Language = 'en' | 'nl';
 
 const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
   const [showDescription, setShowDescription] = useState(false);
+  const [showGame, setShowGame] = useState(false);
+  const [gameCode, setGameCode] = useState<string | null>(null);
 
   const translations = {
     en: {
@@ -35,7 +38,8 @@ const Index = () => {
       afterSolving2: "Keep track of these clues—they build up your path to the next key",
       stuckTitle: "If you're stuck:",
       stuck: "Ask a guide or look around again—sometimes clues are right where you started",
-      backToStart: "Back to Start"
+      backToStart: "Back to Start",
+      startFirstGame: "Start First Game"
     },
     nl: {
       title: "Green Escape: Terugkeer uit de toekomst",
@@ -62,7 +66,8 @@ const Index = () => {
       afterSolving2: "Houd deze aanwijzingen bij—ze bouwen je pad naar de volgende sleutel op",
       stuckTitle: "Als je vastzit:",
       stuck: "Vraag een gids of kijk nog eens rond—soms zijn aanwijzingen precies waar je begon",
-      backToStart: "Terug naar Start"
+      backToStart: "Terug naar Start",
+      startFirstGame: "Start Eerste Spel"
     }
   };
 
@@ -77,7 +82,33 @@ const Index = () => {
   const handleBackToStart = () => {
     setShowDescription(false);
     setSelectedLanguage(null);
+    setShowGame(false);
+    setGameCode(null);
   };
+
+  const handleStartGame = () => {
+    setShowGame(true);
+  };
+
+  const handleGameComplete = (code: string) => {
+    setGameCode(code);
+    setShowGame(false);
+    // Here you could navigate to the next challenge or show a success message
+  };
+
+  const handleBackFromGame = () => {
+    setShowGame(false);
+  };
+
+  if (showGame && selectedLanguage) {
+    return (
+      <DinoGame 
+        onGameComplete={handleGameComplete}
+        onBack={handleBackFromGame}
+        selectedLanguage={selectedLanguage}
+      />
+    );
+  }
 
   if (!showDescription) {
     return (
@@ -184,6 +215,11 @@ const Index = () => {
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
                   {t.title}
                 </h1>
+                {gameCode && (
+                  <div className="bg-green-100 p-4 rounded-lg border-2 border-green-400 mb-4">
+                    <p className="text-green-800 font-bold">Game completed! Code: {gameCode}</p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-6 text-lg leading-relaxed">
@@ -275,11 +311,19 @@ const Index = () => {
                 </div>
               </div>
 
-              <div className="text-center mt-8">
+              <div className="text-center mt-8 space-y-4">
+                <Button
+                  onClick={handleStartGame}
+                  className="px-8 py-4 text-lg font-bold bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white shadow-lg transform hover:scale-105 transition-all duration-200"
+                >
+                  <ArrowRight className="mr-3 h-5 w-5" />
+                  {t.startFirstGame}
+                </Button>
+                
                 <Button
                   onClick={handleBackToStart}
                   variant="outline"
-                  className="px-8 py-3 text-lg font-medium hover:bg-gray-50"
+                  className="px-8 py-3 text-lg font-medium hover:bg-gray-50 ml-4"
                 >
                   {t.backToStart}
                 </Button>
