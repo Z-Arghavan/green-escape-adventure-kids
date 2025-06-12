@@ -176,7 +176,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       const itemType = allItems[Math.floor(Math.random() * allItems.length)];
       game.collectibles.push({
         x: canvas.width,
-        y: itemType.isCollectible ? 180 : 205, // Collectibles at same level, obstacles on ground
+        y: itemType.isCollectible ? 200 : 205, // Both at ground level for easier collection
         width: 25,
         height: 25,
         type: itemType.type,
