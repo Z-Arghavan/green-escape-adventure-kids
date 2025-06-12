@@ -21,8 +21,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const translations = {
     en: {
       title: "Sustainable Dino Game",
-      instructions: "Press SPACE or click to jump over trash! Help clean the environment!",
-      spaceInstructions: "Use SPACE key or click the game area to jump!",
+      instructions: "Press SPACE or click to jump over obstacles! Help promote sustainability!",
+      spaceInstructions: "Use SPACE key or click the game area to jump! Double jump available!",
       start: "Start Game",
       restart: "Restart Game",
       tryAgain: "Try Again",
@@ -36,8 +36,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     },
     nl: {
       title: "Duurzame Dino Spel",
-      instructions: "Druk op SPATIE of klik om over afval te springen! Help het milieu schoon te maken!",
-      spaceInstructions: "Gebruik de SPATIE toets of klik op het speelveld om te springen!",
+      instructions: "Druk op SPATIE of klik om over obstakels te springen! Help duurzaamheid promoten!",
+      spaceInstructions: "Gebruik de SPATIE toets of klik op het speelveld om te springen! Dubbel springen mogelijk!",
       start: "Start Spel",
       restart: "Herstart Spel",
       tryAgain: "Probeer Opnieuw",
@@ -55,26 +55,27 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   // Game objects
   const gameRef = useRef({
-    dino: { x: 50, y: 150, width: 40, height: 40, velocityY: 0, isJumping: false },
+    dino: { x: 50, y: 160, width: 30, height: 30, velocityY: 0, isJumping: false, jumpCount: 0 },
     obstacles: [] as Array<{ x: number; y: number; width: number; height: number; type: string }>,
-    gameSpeed: 3,
+    gameSpeed: 2.5,
     score: 0,
     gameRunning: false
   });
 
   const obstacleTypes = [
-    { type: '🗑️', name: 'trash-bin' },
-    { type: '📄', name: 'paper' },
-    { type: '🍶', name: 'bottle' },
-    { type: '🥤', name: 'cup' },
-    { type: '🛍️', name: 'bag' }
+    { type: '♻️', name: 'recycle' },
+    { type: '🌱', name: 'plant' },
+    { type: '⚡', name: 'energy' },
+    { type: '🌿', name: 'leaf' },
+    { type: '🌍', name: 'earth' },
+    { type: '💡', name: 'bulb' }
   ];
 
   const resetGame = useCallback(() => {
     const game = gameRef.current;
-    game.dino = { x: 50, y: 150, width: 40, height: 40, velocityY: 0, isJumping: false };
+    game.dino = { x: 50, y: 160, width: 30, height: 30, velocityY: 0, isJumping: false, jumpCount: 0 };
     game.obstacles = [];
-    game.gameSpeed = 3;
+    game.gameSpeed = 2.5;
     game.score = 0;
     game.gameRunning = true;
     setScore(0);
@@ -91,9 +92,10 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   const jump = useCallback(() => {
     const game = gameRef.current;
-    if (!game.dino.isJumping && game.gameRunning) {
-      game.dino.velocityY = -12;
+    if (game.gameRunning && game.dino.jumpCount < 2) {
+      game.dino.velocityY = -15;
       game.dino.isJumping = true;
+      game.dino.jumpCount++;
     }
   }, []);
 
@@ -116,10 +118,11 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     game.dino.y += game.dino.velocityY;
 
     // Ground collision
-    if (game.dino.y >= 150) {
-      game.dino.y = 150;
+    if (game.dino.y >= 160) {
+      game.dino.y = 160;
       game.dino.velocityY = 0;
       game.dino.isJumping = false;
+      game.dino.jumpCount = 0; // Reset jump count when on ground
     }
 
     // Draw ground
@@ -132,18 +135,18 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     
     // Add simple dino details
     ctx.fillStyle = '#fff';
-    ctx.fillRect(game.dino.x + 25, game.dino.y + 8, 8, 8); // eye
+    ctx.fillRect(game.dino.x + 20, game.dino.y + 6, 6, 6); // eye
     ctx.fillStyle = '#000';
-    ctx.fillRect(game.dino.x + 27, game.dino.y + 10, 4, 4); // pupil
+    ctx.fillRect(game.dino.x + 21, game.dino.y + 7, 4, 4); // pupil
 
-    // Spawn obstacles
-    if (Math.random() < 0.005) {
+    // Spawn obstacles (reduced frequency)
+    if (Math.random() < 0.003) {
       const obstacleType = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
       game.obstacles.push({
         x: canvas.width,
-        y: 160,
-        width: 30,
-        height: 30,
+        y: 165,
+        width: 25,
+        height: 25,
         type: obstacleType.type
       });
     }
@@ -153,8 +156,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       obstacle.x -= game.gameSpeed;
 
       // Draw obstacle
-      ctx.font = '30px Arial';
-      ctx.fillText(obstacle.type, obstacle.x, obstacle.y + 25);
+      ctx.font = '25px Arial';
+      ctx.fillText(obstacle.type, obstacle.x, obstacle.y + 20);
 
       // Collision detection
       if (
@@ -178,8 +181,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     }
 
     // Increase speed
-    if (game.score % 300 === 0) {
-      game.gameSpeed += 0.5;
+    if (game.score % 400 === 0) {
+      game.gameSpeed += 0.3;
     }
 
     if (game.gameRunning) {
