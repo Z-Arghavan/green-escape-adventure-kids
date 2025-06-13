@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,6 +19,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const [gamesPlayed, setGamesPlayed] = useState(0);
   const [showCode, setShowCode] = useState(false);
   const [inventory, setInventory] = useState<Array<{type: string, name: string}>>([]);
+  const [avoidedChallenges, setAvoidedChallenges] = useState<Array<{type: string, name: string}>>([]);
   const [pointsAnimations, setPointsAnimations] = useState<Array<{id: number, points: string, x: number, y: number, color: string}>>([]);
   const [loadedImages, setLoadedImages] = useState<{[key: string]: HTMLImageElement}>({});
 
@@ -38,6 +40,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       useThisCode: "Use this code for the next challenge!",
       back: "Back to Instructions",
       inventory: "Collected Items:",
+      avoidedChallenges: "Avoided Environmental Challenges:",
       collected: "Collected"
     },
     nl: {
@@ -56,6 +59,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       useThisCode: "Gebruik deze code voor de volgende uitdaging!",
       back: "Terug naar Instructies",
       inventory: "Verzamelde Items:",
+      avoidedChallenges: "Vermeden Milieu Uitdagingen:",
       collected: "Verzameld"
     }
   };
@@ -180,6 +184,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     setHits(0);
     setGameState('playing');
     setInventory([]);
+    setAvoidedChallenges([]);
     setPointsAnimations([]);
   }, []);
 
@@ -341,7 +346,21 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
         }
       }
 
-      return item.x > -item.width;
+      // Check if obstacle was successfully avoided (went off screen without collision)
+      if (item.x < -item.width) {
+        if (!item.isCollectible) {
+          setAvoidedChallenges(prev => {
+            const existing = prev.find(avoided => avoided.type === item.type);
+            if (!existing) {
+              return [...prev, { type: item.type, name: item.name }];
+            }
+            return prev;
+          });
+        }
+        return false;
+      }
+
+      return true;
     });
 
     if (game.gameRunning) {
@@ -459,6 +478,22 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
               <h3 className="font-bold text-green-800 mb-2">{t.inventory}</h3>
               <div className="flex flex-wrap gap-2">
                 {inventory.map((item, index) => (
+                  <span key={index} className="bg-white px-3 py-1 rounded-full text-sm border flex items-center gap-2">
+                    {loadedImages[item.type] && (
+                      <img src={item.type} alt={item.name} className="w-6 h-6" />
+                    )}
+                    {item.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {avoidedChallenges.length > 0 && (
+            <div className="mb-4 p-4 bg-blue-100 rounded-lg">
+              <h3 className="font-bold text-blue-800 mb-2">{t.avoidedChallenges}</h3>
+              <div className="flex flex-wrap gap-2">
+                {avoidedChallenges.map((item, index) => (
                   <span key={index} className="bg-white px-3 py-1 rounded-full text-sm border flex items-center gap-2">
                     {loadedImages[item.type] && (
                       <img src={item.type} alt={item.name} className="w-6 h-6" />
