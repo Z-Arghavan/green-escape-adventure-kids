@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -65,7 +66,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const gameRef = useRef({
     dino: { x: 50, y: 200, width: 30, height: 30, velocityY: 0, isJumping: false, jumpCount: 0 },
     collectibles: [] as Array<{ x: number; y: number; width: number; height: number; type: string; name: string; isCollectible: boolean }>,
-    gameSpeed: 4,
+    clouds: [] as Array<{ x: number; y: number; speed: number; size: number }>,
+    gameSpeed: 5, // Fixed speed
     score: 0,
     hits: 0,
     gameRunning: false
@@ -105,7 +107,12 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     const game = gameRef.current;
     game.dino = { x: 50, y: 200, width: 30, height: 30, velocityY: 0, isJumping: false, jumpCount: 0 };
     game.collectibles = [];
-    game.gameSpeed = 4;
+    game.clouds = [
+      { x: 200, y: 50, speed: 0.5, size: 40 },
+      { x: 500, y: 80, speed: 0.3, size: 50 },
+      { x: 700, y: 40, speed: 0.7, size: 35 }
+    ];
+    game.gameSpeed = 5; // Keep speed constant
     game.score = 0;
     game.hits = 0;
     game.gameRunning = true;
@@ -147,6 +154,19 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Update and draw clouds
+    game.clouds.forEach(cloud => {
+      cloud.x -= cloud.speed;
+      if (cloud.x < -cloud.size) {
+        cloud.x = canvas.width + cloud.size;
+      }
+      
+      // Draw cloud
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.font = `${cloud.size}px Arial`;
+      ctx.fillText('☁️', cloud.x, cloud.y);
+    });
+
     // Update dino physics
     game.dino.velocityY += 0.8; // gravity
     game.dino.y += game.dino.velocityY;
@@ -171,7 +191,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     ctx.restore();
 
     // Spawn items with higher frequency
-    if (Math.random() < 0.008) { // Increased from 0.002
+    if (Math.random() < 0.015) { // Increased frequency for more action
       const allItems = [...collectibleTypes, ...obstacleTypes];
       const itemType = allItems[Math.floor(Math.random() * allItems.length)];
       game.collectibles.push({
@@ -353,17 +373,21 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
-      <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-4xl mx-auto">
+      <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-4xl mx-auto relative">
+        {/* Score display in top right corner */}
+        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg z-10">
+          <div className="text-sm space-y-1 text-gray-700 font-medium">
+            <div>{t.score}: {score}</div>
+            <div>{t.hits}: {hits}/3</div>
+            <div>{t.gamesLeft}: {3 - gamesPlayed}</div>
+          </div>
+        </div>
+
         <CardContent className="p-8">
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">{t.title}</h1>
             <p className="text-gray-600 mb-2">{t.instructions}</p>
             <p className="text-sm text-blue-600 font-semibold mb-4">{t.spaceInstructions}</p>
-            <div className="flex justify-center gap-6 text-sm text-gray-600">
-              <span>{t.score}: {score}</span>
-              <span>{t.hits}: {hits}/3</span>
-              <span>{t.gamesLeft}: {3 - gamesPlayed}</span>
-            </div>
           </div>
 
           {inventory.length > 0 && (
