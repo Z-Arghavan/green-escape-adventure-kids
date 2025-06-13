@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -93,12 +94,23 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   ];
 
   const obstacleTypes = [
+    // Original obstacles
     { type: '/lovable-uploads/e74137ed-ec1b-40fa-90da-b45911ca4bb1.png', name: 'Volcano Pollution', isCollectible: false },
     { type: '/lovable-uploads/56cf7f85-b5d9-49b0-9a71-70cc5c28a059.png', name: 'Acid Rain', isCollectible: false },
     { type: '/lovable-uploads/fbd8c804-0bf1-4502-a2e6-05bddbb62f3e.png', name: 'CO2 Emissions', isCollectible: false },
     { type: '/lovable-uploads/0b899ce6-89d1-4540-9e32-086490877bc9.png', name: 'Industrial Pollution', isCollectible: false },
     { type: '/lovable-uploads/04a038af-ac30-41dc-8b7e-7da7201ab4a1.png', name: 'Burning Earth', isCollectible: false },
-    { type: '/lovable-uploads/8489cb68-0478-4883-bb7d-4fbaac95936d.png', name: 'Melting Ice', isCollectible: false }
+    { type: '/lovable-uploads/8489cb68-0478-4883-bb7d-4fbaac95936d.png', name: 'Melting Ice', isCollectible: false },
+    // New negative obstacles
+    { type: '/lovable-uploads/2adcbd84-6a6e-4d91-ba66-6ee1629cab8c.png', name: 'Building Explosion', isCollectible: false },
+    { type: '/lovable-uploads/f850b845-c7ef-41c1-b3ba-f843d237eb75.png', name: 'Water Pollution', isCollectible: false },
+    { type: '/lovable-uploads/e9f971d5-39d5-4c15-812c-5318d41f156e.png', name: 'Landfill Waste', isCollectible: false },
+    { type: '/lovable-uploads/6e1995d3-e7c1-45b4-86db-b28a327e0430.png', name: 'CO2 Cloud', isCollectible: false },
+    { type: '/lovable-uploads/c25ec259-9f11-4e21-8f21-a0dead0a5081.png', name: 'Polluting Car', isCollectible: false },
+    { type: '/lovable-uploads/b138b94d-e66b-435a-b25b-85c2a5eaf396.png', name: 'Volcanic Eruption', isCollectible: false },
+    { type: '/lovable-uploads/1b4bf97e-256a-4404-8f4c-cc9e2844a9ad.png', name: 'Dead Tree', isCollectible: false },
+    { type: '/lovable-uploads/2f885168-c28e-4b54-a786-61e5c153ed91.png', name: 'Earth on Fire', isCollectible: false },
+    { type: '/lovable-uploads/80707763-0cfa-43ec-b601-65d3402a36b8.png', name: 'Global Warming', isCollectible: false }
   ];
 
   // Load images
@@ -243,14 +255,14 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     ctx.fillText('🦖', -game.dino.x - 35, game.dino.y + 25);
     ctx.restore();
 
-    // Spawn items with proper spacing and timing
+    // Spawn items with proper spacing and timing - now with bigger icons
     if (currentTime - game.lastSpawnTime > 1000 && Math.random() < 0.02) {
       const allItems = [...collectibleTypes, ...obstacleTypes];
       const itemType = allItems[Math.floor(Math.random() * allItems.length)];
       const newX = canvas.width;
-      const newY = itemType.isCollectible ? 205 : 210;
-      const newWidth = 30;
-      const newHeight = 30;
+      const newY = itemType.isCollectible ? 185 : 190; // Adjusted for bigger icons
+      const newWidth = 50; // Increased from 30 to 50
+      const newHeight = 50; // Increased from 30 to 50
       
       if (!checkItemOverlap(newX, newY, newWidth, newHeight)) {
         game.collectibles.push({
@@ -276,11 +288,11 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
         ctx.drawImage(img, item.x, item.y, item.width, item.height);
       } else {
         // Fallback to text if image not loaded
-        ctx.font = '25px Arial';
-        ctx.fillText('?', item.x, item.y + 20);
+        ctx.font = '40px Arial'; // Increased font size for bigger fallback
+        ctx.fillText('?', item.x, item.y + 30);
       }
 
-      // Collision detection
+      // Collision detection with adjusted hitboxes for bigger icons
       const dinoHitbox = {
         x: game.dino.x + 5,
         y: game.dino.y + 5,
@@ -289,10 +301,10 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       };
 
       const itemHitbox = {
-        x: item.x + (item.isCollectible ? 2 : 5),
-        y: item.y + (item.isCollectible ? 2 : 5),
-        width: item.width - (item.isCollectible ? 4 : 10),
-        height: item.height - (item.isCollectible ? 4 : 10)
+        x: item.x + (item.isCollectible ? 5 : 8),
+        y: item.y + (item.isCollectible ? 5 : 8),
+        width: item.width - (item.isCollectible ? 10 : 16),
+        height: item.height - (item.isCollectible ? 10 : 16)
       };
 
       if (
@@ -448,7 +460,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
                 {inventory.map((item, index) => (
                   <span key={index} className="bg-white px-3 py-1 rounded-full text-sm border flex items-center gap-2">
                     {loadedImages[item.type] && (
-                      <img src={item.type} alt={item.name} className="w-4 h-4" />
+                      <img src={item.type} alt={item.name} className="w-6 h-6" />
                     )}
                     {item.name}
                   </span>
