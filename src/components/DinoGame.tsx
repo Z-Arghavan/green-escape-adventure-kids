@@ -256,14 +256,14 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     ctx.fillText('🦖', -game.dino.x - 35, game.dino.y + 25);
     ctx.restore();
 
-    // Spawn items with proper spacing and timing - now with bigger icons
+    // Spawn items with proper spacing and timing - now with even bigger icons
     if (currentTime - game.lastSpawnTime > 1000 && Math.random() < 0.02) {
       const allItems = [...collectibleTypes, ...obstacleTypes];
       const itemType = allItems[Math.floor(Math.random() * allItems.length)];
       const newX = canvas.width;
-      const newY = itemType.isCollectible ? 185 : 190; // Adjusted for bigger icons
-      const newWidth = 50; // Increased from 30 to 50
-      const newHeight = 50; // Increased from 30 to 50
+      const newY = itemType.isCollectible ? 175 : 180; // Adjusted for bigger icons
+      const newWidth = 70; // Increased from 50 to 70
+      const newHeight = 70; // Increased from 50 to 70
       
       if (!checkItemOverlap(newX, newY, newWidth, newHeight)) {
         game.collectibles.push({
@@ -289,8 +289,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
         ctx.drawImage(img, item.x, item.y, item.width, item.height);
       } else {
         // Fallback to text if image not loaded
-        ctx.font = '40px Arial'; // Increased font size for bigger fallback
-        ctx.fillText('?', item.x, item.y + 30);
+        ctx.font = '50px Arial'; // Increased font size for bigger fallback
+        ctx.fillText('?', item.x, item.y + 40);
       }
 
       // Collision detection with adjusted hitboxes for bigger icons
@@ -302,10 +302,10 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       };
 
       const itemHitbox = {
-        x: item.x + (item.isCollectible ? 5 : 8),
-        y: item.y + (item.isCollectible ? 5 : 8),
-        width: item.width - (item.isCollectible ? 10 : 16),
-        height: item.height - (item.isCollectible ? 10 : 16)
+        x: item.x + (item.isCollectible ? 8 : 12),
+        y: item.y + (item.isCollectible ? 8 : 12),
+        width: item.width - (item.isCollectible ? 16 : 24),
+        height: item.height - (item.isCollectible ? 16 : 24)
       };
 
       if (
