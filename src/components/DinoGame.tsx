@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -67,7 +66,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     dino: { x: 50, y: 200, width: 30, height: 30, velocityY: 0, isJumping: false, jumpCount: 0 },
     collectibles: [] as Array<{ x: number; y: number; width: number; height: number; type: string; name: string; isCollectible: boolean }>,
     clouds: [] as Array<{ x: number; y: number; speed: number; size: number }>,
-    gameSpeed: 5, // Fixed speed
+    gameSpeed: 2, // Match cloud speed - slower and consistent
     score: 0,
     hits: 0,
     gameRunning: false
@@ -112,7 +111,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       { x: 500, y: 80, speed: 0.3, size: 50 },
       { x: 700, y: 40, speed: 0.7, size: 35 }
     ];
-    game.gameSpeed = 5; // Keep speed constant
+    game.gameSpeed = 2; // Keep consistent with cloud speed
     game.score = 0;
     game.hits = 0;
     game.gameRunning = true;
@@ -191,7 +190,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     ctx.restore();
 
     // Spawn items with higher frequency
-    if (Math.random() < 0.015) { // Increased frequency for more action
+    if (Math.random() < 0.02) { // Increased frequency for more action
       const allItems = [...collectibleTypes, ...obstacleTypes];
       const itemType = allItems[Math.floor(Math.random() * allItems.length)];
       game.collectibles.push({
@@ -205,9 +204,9 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       });
     }
 
-    // Update and draw items
+    // Update and draw items - using consistent game speed
     game.collectibles = game.collectibles.filter(item => {
-      item.x -= game.gameSpeed;
+      item.x -= game.gameSpeed; // Use consistent speed matching clouds
 
       // Draw item
       ctx.font = '25px Arial';
@@ -266,10 +265,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       return item.x > -item.width;
     });
 
-    // Increase speed gradually but more aggressively
-    if (game.score > 0 && game.score % 300 === 0) {
-      game.gameSpeed += 0.2;
-    }
+    // Remove speed increase - keep consistent speed
+    // Speed no longer increases with score
 
     if (game.gameRunning) {
       gameLoopRef.current = requestAnimationFrame(gameLoop);
