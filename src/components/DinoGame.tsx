@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -68,7 +67,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   // Game objects
   const gameRef = useRef({
-    dino: { x: 50, y: 200, width: 30, height: 30, velocityY: 0, isJumping: false, jumpCount: 0 },
+    dino: { x: 50, y: 200, width: 45, height: 45, velocityY: 0, isJumping: false, jumpCount: 0 },
     collectibles: [] as Array<{ x: number; y: number; width: number; height: number; type: string; name: string; isCollectible: boolean }>,
     clouds: [] as Array<{ x: number; y: number; speed: number; size: number }>,
     gameSpeed: 2,
@@ -168,7 +167,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   const resetGame = useCallback(() => {
     const game = gameRef.current;
-    game.dino = { x: 50, y: 200, width: 30, height: 30, velocityY: 0, isJumping: false, jumpCount: 0 };
+    game.dino = { x: 50, y: 200, width: 45, height: 45, velocityY: 0, isJumping: false, jumpCount: 0 };
     game.collectibles = [];
     game.clouds = [
       { x: 200, y: 50, speed: 0.5, size: 40 },
@@ -254,11 +253,11 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     ctx.fillStyle = '#8B5CF6';
     ctx.fillRect(0, 235, canvas.width, 15);
 
-    // Draw dino using T-Rex emoji
+    // Draw dino using T-Rex emoji - made bigger
     ctx.save();
-    ctx.font = '35px Arial';
+    ctx.font = '50px Arial'; // Increased from 35px to 50px
     ctx.scale(-1, 1);
-    ctx.fillText('🦖', -game.dino.x - 35, game.dino.y + 25);
+    ctx.fillText('🦖', -game.dino.x - 50, game.dino.y + 35); // Adjusted positioning for bigger size
     ctx.restore();
 
     // Spawn items with proper spacing and timing - now with even bigger icons
@@ -300,10 +299,10 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
       // Collision detection with adjusted hitboxes for bigger icons
       const dinoHitbox = {
-        x: game.dino.x + 5,
-        y: game.dino.y + 5,
-        width: game.dino.width - 10,
-        height: game.dino.height - 10
+        x: game.dino.x + 8,
+        y: game.dino.y + 8,
+        width: game.dino.width - 16,
+        height: game.dino.height - 16
       };
 
       const itemHitbox = {
