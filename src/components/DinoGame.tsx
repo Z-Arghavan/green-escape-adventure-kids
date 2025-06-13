@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -66,7 +65,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const gameRef = useRef({
     dino: { x: 50, y: 200, width: 30, height: 30, velocityY: 0, isJumping: false, jumpCount: 0 },
     collectibles: [] as Array<{ x: number; y: number; width: number; height: number; type: string; name: string; isCollectible: boolean }>,
-    gameSpeed: 2,
+    gameSpeed: 4,
     score: 0,
     hits: 0,
     gameRunning: false
@@ -106,7 +105,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     const game = gameRef.current;
     game.dino = { x: 50, y: 200, width: 30, height: 30, velocityY: 0, isJumping: false, jumpCount: 0 };
     game.collectibles = [];
-    game.gameSpeed = 2;
+    game.gameSpeed = 4;
     game.score = 0;
     game.hits = 0;
     game.gameRunning = true;
@@ -171,8 +170,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     ctx.fillText('🦖', -game.dino.x - 35, game.dino.y + 25);
     ctx.restore();
 
-    // Spawn items with lower frequency
-    if (Math.random() < 0.002) { // Reduced from 0.003
+    // Spawn items with higher frequency
+    if (Math.random() < 0.008) { // Increased from 0.002
       const allItems = [...collectibleTypes, ...obstacleTypes];
       const itemType = allItems[Math.floor(Math.random() * allItems.length)];
       game.collectibles.push({
@@ -247,9 +246,9 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       return item.x > -item.width;
     });
 
-    // Increase speed gradually
-    if (game.score > 0 && game.score % 500 === 0) {
-      game.gameSpeed += 0.1;
+    // Increase speed gradually but more aggressively
+    if (game.score > 0 && game.score % 300 === 0) {
+      game.gameSpeed += 0.2;
     }
 
     if (game.gameRunning) {
