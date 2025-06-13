@@ -374,15 +374,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
       <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-4xl mx-auto relative">
-        {/* Score display in top right corner */}
-        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg z-10">
-          <div className="text-sm space-y-1 text-gray-700 font-medium">
-            <div>{t.score}: {score}</div>
-            <div>{t.hits}: {hits}/3</div>
-            <div>{t.gamesLeft}: {3 - gamesPlayed}</div>
-          </div>
-        </div>
-
         <CardContent className="p-8">
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">{t.title}</h1>
@@ -411,6 +402,15 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
               className="border-2 border-gray-300 rounded-lg bg-gradient-to-b from-blue-200 to-green-200"
               style={{ maxWidth: '100%', height: 'auto' }}
             />
+            
+            {/* Score display overlay in top right of canvas */}
+            <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg z-10">
+              <div className="text-xs space-y-1 text-gray-700 font-medium">
+                <div>{t.score}: {score}</div>
+                <div>{t.hits}: {hits}/3</div>
+                <div>{t.gamesLeft}: {3 - gamesPlayed}</div>
+              </div>
+            </div>
             
             {/* Points animations overlay */}
             <div className="absolute inset-0 pointer-events-none">
