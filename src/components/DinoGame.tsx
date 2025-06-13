@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -77,20 +76,22 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   // Updated collectible types with all positive environmental icons
   const collectibleTypes = [
-    // Original collectibles
+    // Original collectibles (minus Clean Energy Monitor)
     { type: '/lovable-uploads/5d2bd614-4b17-4d01-9a71-ccb46a3c48bf.png', name: 'Earth with Plant', isCollectible: true },
     { type: '/lovable-uploads/661772a0-df0b-44c6-835d-e70dea731378.png', name: 'Growing Plant', isCollectible: true },
-    { type: '/lovable-uploads/4ec2da43-bf79-43c9-92b5-8ae6940b76da.png', name: 'Clean Energy Monitor', isCollectible: true },
-    // New positive icons
+    // New positive icons with updated names
     { type: '/lovable-uploads/fdf1020c-e08d-4792-861b-25357994cacb.png', name: 'Recycling Symbol', isCollectible: true },
-    { type: '/lovable-uploads/9ebe3ed1-146a-48a1-b10f-ae05e19fc0d2.png', name: 'Green Factory', isCollectible: true },
-    { type: '/lovable-uploads/721167ab-50cc-4d95-8bfe-77c33abc2d15.png', name: 'Recycling Bins', isCollectible: true },
+    { type: '/lovable-uploads/9ebe3ed1-146a-48a1-b10f-ae05e19fc0d2.png', name: 'Recycling Facility', isCollectible: true },
+    { type: '/lovable-uploads/721167ab-50cc-4d95-8bfe-77c33abc2d15.png', name: 'Waste Sorting', isCollectible: true },
     { type: '/lovable-uploads/0178c8ca-ee9f-457e-b478-b15b231207ca.png', name: 'Wind Turbines', isCollectible: true },
     { type: '/lovable-uploads/625faf06-2454-4fdb-ad43-140d17feb034.png', name: 'Green City', isCollectible: true },
     { type: '/lovable-uploads/834a2fa7-33e5-4eb0-84c8-4fa12b573d80.png', name: 'Electric Car', isCollectible: true },
     { type: '/lovable-uploads/250e79f0-7be1-4fba-90d9-161a0ad7c425.png', name: 'Forest Trees', isCollectible: true },
     { type: '/lovable-uploads/7d3d43b4-a80f-4c33-9ebe-56170096dfb5.png', name: 'Earth Care', isCollectible: true },
-    { type: '/lovable-uploads/18cd6e74-a8dd-4977-a2bf-c0b3bb7a92d7.png', name: 'Bottle Recycling', isCollectible: true }
+    { type: '/lovable-uploads/18cd6e74-a8dd-4977-a2bf-c0b3bb7a92d7.png', name: 'Bottle Recycling', isCollectible: true },
+    // Two new positive icons
+    { type: '/lovable-uploads/45a325a8-4bef-4345-8822-16c4b8d0572d.png', name: 'Solar Panel', isCollectible: true },
+    { type: '/lovable-uploads/b399f0b5-4a11-468a-ba96-7938eaf442b9.png', name: 'Green Innovation', isCollectible: true }
   ];
 
   const obstacleTypes = [
