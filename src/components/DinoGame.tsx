@@ -19,6 +19,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const [showCode, setShowCode] = useState(false);
   const [inventory, setInventory] = useState<Array<{type: string, name: string}>>([]);
   const [pointsAnimations, setPointsAnimations] = useState<Array<{id: number, points: string, x: number, y: number, color: string}>>([]);
+  const [loadedImages, setLoadedImages] = useState<{[key: string]: HTMLImageElement}>({});
 
   const translations = {
     en: {
@@ -66,34 +67,56 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     dino: { x: 50, y: 200, width: 30, height: 30, velocityY: 0, isJumping: false, jumpCount: 0 },
     collectibles: [] as Array<{ x: number; y: number; width: number; height: number; type: string; name: string; isCollectible: boolean }>,
     clouds: [] as Array<{ x: number; y: number; speed: number; size: number }>,
-    gameSpeed: 2, // Match cloud speed - slower and consistent
+    gameSpeed: 2,
     score: 0,
     hits: 0,
     gameRunning: false,
-    lastSpawnTime: 0 // Add timing for spawn spacing
+    lastSpawnTime: 0
   });
 
+  // Updated collectible and obstacle types using the uploaded images
   const collectibleTypes = [
-    { type: '♻️', name: 'Recycling Symbol', isCollectible: true },
-    { type: '🌱', name: 'Green Plant', isCollectible: true },
-    { type: '⚡', name: 'Clean Energy', isCollectible: true },
-    { type: '🌿', name: 'Natural Leaf', isCollectible: true },
-    { type: '🌍', name: 'Earth Care', isCollectible: true },
-    { type: '🔋', name: 'Battery Power', isCollectible: true },
-    { type: '🚲', name: 'Eco Transport', isCollectible: true },
-    { type: '🌞', name: 'Solar Energy', isCollectible: true }
+    { type: '/lovable-uploads/5d2bd614-4b17-4d01-9a71-ccb46a3c48bf.png', name: 'Earth with Plant', isCollectible: true },
+    { type: '/lovable-uploads/661772a0-df0b-44c6-835d-e70dea731378.png', name: 'Growing Plant', isCollectible: true },
+    { type: '/lovable-uploads/4ec2da43-bf79-43c9-92b5-8ae6940b76da.png', name: 'Clean Energy Monitor', isCollectible: true }
   ];
 
   const obstacleTypes = [
-    { type: '🗑️', name: 'Trash Bin', isCollectible: false },
-    { type: '🚗', name: 'Pollution Car', isCollectible: false },
-    { type: '🏭', name: 'Factory Smoke', isCollectible: false },
-    { type: '💨', name: 'Air Pollution', isCollectible: false },
-    { type: '🛢️', name: 'Oil Barrel', isCollectible: false },
-    { type: '🔥', name: 'Burning Waste', isCollectible: false },
-    { type: '☢️', name: 'Nuclear Waste', isCollectible: false },
-    { type: '🚬', name: 'Cigarette Pollution', isCollectible: false }
+    { type: '/lovable-uploads/e74137ed-ec1b-40fa-90da-b45911ca4bb1.png', name: 'Volcano Pollution', isCollectible: false },
+    { type: '/lovable-uploads/56cf7f85-b5d9-49b0-9a71-70cc5c28a059.png', name: 'Acid Rain', isCollectible: false },
+    { type: '/lovable-uploads/fbd8c804-0bf1-4502-a2e6-05bddbb62f3e.png', name: 'CO2 Emissions', isCollectible: false },
+    { type: '/lovable-uploads/0b899ce6-89d1-4540-9e32-086490877bc9.png', name: 'Industrial Pollution', isCollectible: false },
+    { type: '/lovable-uploads/04a038af-ac30-41dc-8b7e-7da7201ab4a1.png', name: 'Burning Earth', isCollectible: false },
+    { type: '/lovable-uploads/8489cb68-0478-4883-bb7d-4fbaac95936d.png', name: 'Melting Ice', isCollectible: false }
   ];
+
+  // Load images
+  useEffect(() => {
+    const loadImages = async () => {
+      const allItems = [...collectibleTypes, ...obstacleTypes];
+      const imagePromises = allItems.map(item => {
+        return new Promise<{key: string, img: HTMLImageElement}>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve({ key: item.type, img });
+          img.onerror = reject;
+          img.src = item.type;
+        });
+      });
+
+      try {
+        const results = await Promise.all(imagePromises);
+        const imageMap: {[key: string]: HTMLImageElement} = {};
+        results.forEach(({ key, img }) => {
+          imageMap[key] = img;
+        });
+        setLoadedImages(imageMap);
+      } catch (error) {
+        console.error('Failed to load images:', error);
+      }
+    };
+
+    loadImages();
+  }, []);
 
   const addPointsAnimation = useCallback((points: string, x: number, y: number, color: string) => {
     const id = Date.now() + Math.random();
@@ -105,7 +128,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   const checkItemOverlap = useCallback((newX: number, newY: number, newWidth: number, newHeight: number) => {
     const game = gameRef.current;
-    const minDistance = 80; // Minimum distance between items to prevent overlap
+    const minDistance = 80;
     
     return game.collectibles.some(item => {
       const distance = Math.sqrt(
@@ -124,7 +147,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       { x: 500, y: 80, speed: 0.3, size: 50 },
       { x: 700, y: 40, speed: 0.7, size: 35 }
     ];
-    game.gameSpeed = 2; // Keep consistent with cloud speed
+    game.gameSpeed = 2;
     game.score = 0;
     game.hits = 0;
     game.gameRunning = true;
@@ -174,7 +197,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       cloud.x -= cloud.speed;
       if (cloud.x < -cloud.size) {
         cloud.x = canvas.width + cloud.size;
-        // Ensure clouds don't overlap when respawning
         const otherClouds = game.clouds.filter((_, i) => i !== index);
         while (otherClouds.some(other => Math.abs(cloud.x - other.x) < 150)) {
           cloud.x += 50;
@@ -188,7 +210,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     });
 
     // Update dino physics
-    game.dino.velocityY += 0.8; // gravity
+    game.dino.velocityY += 0.8;
     game.dino.y += game.dino.velocityY;
 
     // Ground collision
@@ -203,23 +225,22 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     ctx.fillStyle = '#8B5CF6';
     ctx.fillRect(0, 235, canvas.width, 15);
 
-    // Draw dino using T-Rex emoji (mirrored and bigger)
+    // Draw dino using T-Rex emoji
     ctx.save();
     ctx.font = '35px Arial';
-    ctx.scale(-1, 1); // Mirror horizontally
+    ctx.scale(-1, 1);
     ctx.fillText('🦖', -game.dino.x - 35, game.dino.y + 25);
     ctx.restore();
 
     // Spawn items with proper spacing and timing
-    if (currentTime - game.lastSpawnTime > 1000 && Math.random() < 0.02) { // Minimum 1 second between spawns
+    if (currentTime - game.lastSpawnTime > 1000 && Math.random() < 0.02) {
       const allItems = [...collectibleTypes, ...obstacleTypes];
       const itemType = allItems[Math.floor(Math.random() * allItems.length)];
       const newX = canvas.width;
       const newY = itemType.isCollectible ? 205 : 210;
-      const newWidth = 25;
-      const newHeight = 25;
+      const newWidth = 30;
+      const newHeight = 30;
       
-      // Only spawn if it won't overlap with existing items
       if (!checkItemOverlap(newX, newY, newWidth, newHeight)) {
         game.collectibles.push({
           x: newX,
@@ -234,15 +255,21 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       }
     }
 
-    // Update and draw items - using consistent game speed
+    // Update and draw items using images
     game.collectibles = game.collectibles.filter(item => {
-      item.x -= game.gameSpeed; // Use consistent speed matching clouds
+      item.x -= game.gameSpeed;
 
-      // Draw item with proper spacing from other elements
-      ctx.font = '25px Arial';
-      ctx.fillText(item.type, item.x, item.y + 20);
+      // Draw item using loaded image
+      const img = loadedImages[item.type];
+      if (img) {
+        ctx.drawImage(img, item.x, item.y, item.width, item.height);
+      } else {
+        // Fallback to text if image not loaded
+        ctx.font = '25px Arial';
+        ctx.fillText('?', item.x, item.y + 20);
+      }
 
-      // Improved collision detection with larger hitbox for collectibles
+      // Collision detection
       const dinoHitbox = {
         x: game.dino.x + 5,
         y: game.dino.y + 5,
@@ -264,7 +291,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
         dinoHitbox.y + dinoHitbox.height > itemHitbox.y
       ) {
         if (item.isCollectible) {
-          // Collect the item
           setInventory(prev => {
             const existing = prev.find(inv => inv.type === item.type);
             if (!existing) {
@@ -277,7 +303,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
           addPointsAnimation('+100', item.x, item.y, '#22c55e');
           return false;
         } else {
-          // Hit an obstacle
           game.hits += 1;
           game.score = Math.max(0, game.score - 100);
           setScore(game.score);
@@ -295,13 +320,10 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       return item.x > -item.width;
     });
 
-    // Remove speed increase - keep consistent speed
-    // Speed no longer increases with score
-
     if (game.gameRunning) {
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     }
-  }, [addPointsAnimation, checkItemOverlap]);
+  }, [addPointsAnimation, checkItemOverlap, loadedImages]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -413,8 +435,11 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
               <h3 className="font-bold text-green-800 mb-2">{t.inventory}</h3>
               <div className="flex flex-wrap gap-2">
                 {inventory.map((item, index) => (
-                  <span key={index} className="bg-white px-3 py-1 rounded-full text-sm border">
-                    {item.type} {item.name}
+                  <span key={index} className="bg-white px-3 py-1 rounded-full text-sm border flex items-center gap-2">
+                    {loadedImages[item.type] && (
+                      <img src={item.type} alt={item.name} className="w-4 h-4" />
+                    )}
+                    {item.name}
                   </span>
                 ))}
               </div>
@@ -430,7 +455,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
               style={{ maxWidth: '100%', height: 'auto' }}
             />
             
-            {/* Score display overlay in top right of canvas */}
             <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg z-10">
               <div className="text-xs space-y-1 text-gray-700 font-medium">
                 <div>{t.score}: {score}</div>
@@ -439,7 +463,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
               </div>
             </div>
             
-            {/* Points animations overlay */}
             <div className="absolute inset-0 pointer-events-none">
               {pointsAnimations.map((anim) => (
                 <div
