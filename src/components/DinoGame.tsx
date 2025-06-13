@@ -69,7 +69,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     gameSpeed: 2, // Match cloud speed - slower and consistent
     score: 0,
     hits: 0,
-    gameRunning: false
+    gameRunning: false,
+    lastSpawnTime: 0 // Add timing for spawn spacing
   });
 
   const collectibleTypes = [
@@ -102,6 +103,18 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     }, 1500);
   }, []);
 
+  const checkItemOverlap = useCallback((newX: number, newY: number, newWidth: number, newHeight: number) => {
+    const game = gameRef.current;
+    const minDistance = 80; // Minimum distance between items to prevent overlap
+    
+    return game.collectibles.some(item => {
+      const distance = Math.sqrt(
+        Math.pow(newX - item.x, 2) + Math.pow(newY - item.y, 2)
+      );
+      return distance < minDistance;
+    });
+  }, []);
+
   const resetGame = useCallback(() => {
     const game = gameRef.current;
     game.dino = { x: 50, y: 200, width: 30, height: 30, velocityY: 0, isJumping: false, jumpCount: 0 };
@@ -115,6 +128,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     game.score = 0;
     game.hits = 0;
     game.gameRunning = true;
+    game.lastSpawnTime = 0;
     setScore(0);
     setHits(0);
     setGameState('playing');
@@ -150,14 +164,21 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     
     if (!game.gameRunning) return;
 
+    const currentTime = Date.now();
+
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Update and draw clouds
-    game.clouds.forEach(cloud => {
+    // Update and draw clouds with proper spacing
+    game.clouds.forEach((cloud, index) => {
       cloud.x -= cloud.speed;
       if (cloud.x < -cloud.size) {
         cloud.x = canvas.width + cloud.size;
+        // Ensure clouds don't overlap when respawning
+        const otherClouds = game.clouds.filter((_, i) => i !== index);
+        while (otherClouds.some(other => Math.abs(cloud.x - other.x) < 150)) {
+          cloud.x += 50;
+        }
       }
       
       // Draw cloud
@@ -189,26 +210,35 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     ctx.fillText('🦖', -game.dino.x - 35, game.dino.y + 25);
     ctx.restore();
 
-    // Spawn items with higher frequency
-    if (Math.random() < 0.02) { // Increased frequency for more action
+    // Spawn items with proper spacing and timing
+    if (currentTime - game.lastSpawnTime > 1000 && Math.random() < 0.02) { // Minimum 1 second between spawns
       const allItems = [...collectibleTypes, ...obstacleTypes];
       const itemType = allItems[Math.floor(Math.random() * allItems.length)];
-      game.collectibles.push({
-        x: canvas.width,
-        y: itemType.isCollectible ? 205 : 210, // Collectibles slightly lower for easier collection
-        width: 25,
-        height: 25,
-        type: itemType.type,
-        name: itemType.name,
-        isCollectible: itemType.isCollectible
-      });
+      const newX = canvas.width;
+      const newY = itemType.isCollectible ? 205 : 210;
+      const newWidth = 25;
+      const newHeight = 25;
+      
+      // Only spawn if it won't overlap with existing items
+      if (!checkItemOverlap(newX, newY, newWidth, newHeight)) {
+        game.collectibles.push({
+          x: newX,
+          y: newY,
+          width: newWidth,
+          height: newHeight,
+          type: itemType.type,
+          name: itemType.name,
+          isCollectible: itemType.isCollectible
+        });
+        game.lastSpawnTime = currentTime;
+      }
     }
 
     // Update and draw items - using consistent game speed
     game.collectibles = game.collectibles.filter(item => {
       item.x -= game.gameSpeed; // Use consistent speed matching clouds
 
-      // Draw item
+      // Draw item with proper spacing from other elements
       ctx.font = '25px Arial';
       ctx.fillText(item.type, item.x, item.y + 20);
 
@@ -271,7 +301,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     if (game.gameRunning) {
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     }
-  }, [addPointsAnimation]);
+  }, [addPointsAnimation, checkItemOverlap]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
