@@ -422,7 +422,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   };
 
   const handleComplete = () => {
-    onGameComplete('5555');
+    onGameComplete('154');
   };
 
   if (showCode) {
@@ -435,7 +435,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
             
             <div className="bg-yellow-100 p-6 rounded-xl border-2 border-yellow-400">
               <p className="text-lg font-semibold text-gray-800 mb-2">{t.yourCode}</p>
-              <div className="text-4xl font-bold text-green-600 font-mono">5555</div>
+              <div className="text-4xl font-bold text-green-600 font-mono">154</div>
             </div>
             
             <p className="text-gray-600">{t.useThisCode}</p>
