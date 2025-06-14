@@ -67,7 +67,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   // Game objects
   const gameRef = useRef({
-    dino: { x: 50, y: 200, width: 45, height: 45, velocityY: 0, isJumping: false, jumpCount: 0 },
+    dino: { x: 50, y: 200, width: 50, height: 50, velocityY: 0, isJumping: false, jumpCount: 0 },
     collectibles: [] as Array<{ x: number; y: number; width: number; height: number; type: string; name: string; isCollectible: boolean }>,
     clouds: [] as Array<{ x: number; y: number; speed: number; size: number }>,
     gameSpeed: 2,
@@ -121,11 +121,19 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   useEffect(() => {
     const loadImages = async () => {
       const allItems = [...collectibleTypes, ...obstacleTypes];
+      console.log('Loading images for', allItems.length, 'items');
+      
       const imagePromises = allItems.map(item => {
         return new Promise<{key: string, img: HTMLImageElement}>((resolve, reject) => {
           const img = new Image();
-          img.onload = () => resolve({ key: item.type, img });
-          img.onerror = reject;
+          img.onload = () => {
+            console.log('Successfully loaded image:', item.type);
+            resolve({ key: item.type, img });
+          };
+          img.onerror = (error) => {
+            console.error('Failed to load image:', item.type, error);
+            reject(error);
+          };
           img.src = item.type;
         });
       });
@@ -136,9 +144,10 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
         results.forEach(({ key, img }) => {
           imageMap[key] = img;
         });
+        console.log('All images loaded successfully:', Object.keys(imageMap).length);
         setLoadedImages(imageMap);
       } catch (error) {
-        console.error('Failed to load images:', error);
+        console.error('Failed to load some images:', error);
       }
     };
 
@@ -167,7 +176,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   const resetGame = useCallback(() => {
     const game = gameRef.current;
-    game.dino = { x: 50, y: 200, width: 45, height: 45, velocityY: 0, isJumping: false, jumpCount: 0 };
+    game.dino = { x: 50, y: 200, width: 50, height: 50, velocityY: 0, isJumping: false, jumpCount: 0 };
     game.collectibles = [];
     game.clouds = [
       { x: 200, y: 50, speed: 0.5, size: 40 },
@@ -255,9 +264,9 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
     // Draw dino using T-Rex emoji - made bigger
     ctx.save();
-    ctx.font = '50px Arial'; // Increased from 35px to 50px
+    ctx.font = '55px Arial'; // Increased from 50px to 55px for even bigger dino
     ctx.scale(-1, 1);
-    ctx.fillText('🦖', -game.dino.x - 50, game.dino.y + 35); // Adjusted positioning for bigger size
+    ctx.fillText('🦖', -game.dino.x - 55, game.dino.y + 40); // Adjusted positioning for bigger size
     ctx.restore();
 
     // Spawn items with proper spacing and timing - now with even bigger icons
@@ -292,9 +301,22 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       if (img) {
         ctx.drawImage(img, item.x, item.y, item.width, item.height);
       } else {
-        // Fallback to text if image not loaded
-        ctx.font = '50px Arial'; // Increased font size for bigger fallback
-        ctx.fillText('?', item.x, item.y + 40);
+        // Enhanced fallback with better visual indicators
+        ctx.fillStyle = item.isCollectible ? '#22c55e' : '#ef4444';
+        ctx.fillRect(item.x, item.y, item.width, item.height);
+        
+        // Add emoji fallback
+        ctx.fillStyle = 'white';
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+          item.isCollectible ? '♻️' : '💨', 
+          item.x + item.width/2, 
+          item.y + item.height/2 + 10
+        );
+        ctx.textAlign = 'left';
+        
+        console.log('Image not loaded for:', item.type, 'Using fallback display');
       }
 
       // Collision detection with adjusted hitboxes for bigger icons
