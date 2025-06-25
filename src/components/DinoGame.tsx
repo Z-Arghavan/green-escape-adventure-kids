@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -84,7 +85,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     { type: '/lovable-uploads/5d2bd614-4b17-4d01-9a71-ccb46a3c48bf.png', name: 'Earth with Plant', isCollectible: true },
     { type: '/lovable-uploads/661772a0-df0b-44c6-835d-e70dea731378.png', name: 'Growing Plant', isCollectible: true },
     // New positive icons with updated names
-    { type: '/lovable-uploads/fdf1020c-e08d-4792-861b-25357994cacb.png', name: 'Recycling Symbol', isCollectible: true },
+    { type: '/lovable-uploads/fdf1020c-e08d-4792-861b-25357994cacb.png', name: 'Recycling', isCollectible: true },
     { type: '/lovable-uploads/9ebe3ed1-146a-48a1-b10f-ae05e19fc0d2.png', name: 'Recycling Facility', isCollectible: true },
     { type: '/lovable-uploads/721167ab-50cc-4d95-8bfe-77c33abc2d15.png', name: 'Waste Sorting', isCollectible: true },
     { type: '/lovable-uploads/0178c8ca-ee9f-457e-b478-b15b231207ca.png', name: 'Wind Turbines', isCollectible: true },
