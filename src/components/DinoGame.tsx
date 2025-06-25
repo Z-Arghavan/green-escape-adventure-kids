@@ -24,6 +24,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const [score, setScore] = useState(0);
   const [hits, setHits] = useState(0);
   const [gamesPlayed, setGamesPlayed] = useState(0);
+  const [gameScores, setGameScores] = useState<number[]>([]); // Track individual game scores
   const [showCode, setShowCode] = useState(false);
   const [showScoreboard, setShowScoreboard] = useState(false);
   const [globalScores, setGlobalScores] = useState<ScoreEntry[]>([]);
@@ -61,7 +62,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       backToCode: "Back to Code",
       rank: "Rank",
       player: "Player",
-      finalScore: "Final Score"
+      finalScore: "Final Score",
+      highestGameScore: "Highest Game Score"
     },
     nl: {
       title: "Duurzame Dino Spel",
@@ -90,7 +92,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       backToCode: "Terug naar Code",
       rank: "Positie",
       player: "Speler",
-      finalScore: "EindScore"
+      finalScore: "EindScore",
+      highestGameScore: "Hoogste Spel Score"
     }
   };
 
@@ -162,6 +165,11 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     const completionBonus = 200; // For completing all 3 games
     return inventoryScore + avoidedScore + completionBonus;
   }, [inventory, avoidedChallenges]);
+
+  // Get highest individual game score
+  const getHighestGameScore = useCallback(() => {
+    return gameScores.length > 0 ? Math.max(...gameScores) : 0;
+  }, [gameScores]);
 
   // Save score to global scoreboard
   const saveToScoreboard = useCallback(() => {
@@ -512,9 +520,13 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   const handleRestart = () => {
     if (gamesPlayed < 2) {
+      // Save the current game score before resetting
+      setGameScores(prev => [...prev, score]);
       setGamesPlayed(prev => prev + 1);
       resetGame();
     } else {
+      // Save the final game score
+      setGameScores(prev => [...prev, score]);
       setGamesPlayed(3);
       saveToScoreboard();
       setShowCode(true);
@@ -625,9 +637,14 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
             </div>
             
             <div className="text-center mt-6 space-y-3">
-              <p className="text-sm text-gray-600">
-                {t.finalScore}: {calculateFinalScore()}
-              </p>
+              <div className="bg-blue-50 p-4 rounded-lg space-y-2">
+                <p className="text-sm text-gray-600">
+                  {t.finalScore}: {calculateFinalScore()}
+                </p>
+                <p className="text-sm text-blue-600 font-semibold">
+                  {t.highestGameScore}: {getHighestGameScore()}
+                </p>
+              </div>
               <Button 
                 onClick={handleBackToCode}
                 className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold"
@@ -657,16 +674,19 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
             
             <p className="text-gray-600">{t.useThisCode}</p>
             
-            {userRank > 0 && (
-              <div className="bg-blue-100 p-4 rounded-lg">
+            <div className="bg-blue-100 p-4 rounded-lg space-y-2">
+              {userRank > 0 && (
                 <p className="text-blue-800 font-semibold">
                   {t.yourRank}: #{userRank}
                 </p>
-                <p className="text-sm text-blue-600">
-                  {t.finalScore}: {calculateFinalScore()}
-                </p>
-              </div>
-            )}
+              )}
+              <p className="text-sm text-blue-600">
+                {t.finalScore}: {calculateFinalScore()}
+              </p>
+              <p className="text-sm text-green-600 font-semibold">
+                {t.highestGameScore}: {getHighestGameScore()}
+              </p>
+            </div>
             
             <div className="space-y-3">
               <Button 
