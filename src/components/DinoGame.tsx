@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,7 +26,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const translations = {
     en: {
       title: "Sustainable Dino Game",
-      instructions: "Collect green energy items (+100 points) and avoid waste! You can be hit 3 times before game over.",
+      instructions: "Look at the icons! Jump from the negative environmental impacts and challenges! But go ahead and collect the positive environmental solutions!",
       spaceInstructions: "Use SPACE key or click the game area to jump! Double jump available!",
       start: "Start Game",
       restart: "Restart Game",
@@ -44,7 +45,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     },
     nl: {
       title: "Duurzame Dino Spel",
-      instructions: "Verzamel groene energie items (+100 punten) en vermijd afval! Je kunt 3 keer geraakt worden voor game over.",
+      instructions: "Kijk naar de iconen! Spring weg van de negatieve milieu-impacts en uitdagingen! Maar ga ervoor en verzamel de positieve milieu-oplossingen!",
       spaceInstructions: "Gebruik de SPATIE toets of klik op het speelveld om te springen! Dubbel springen mogelijk!",
       start: "Start Spel",
       restart: "Herstart Spel",
