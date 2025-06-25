@@ -105,7 +105,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     { type: '/lovable-uploads/0b899ce6-89d1-4540-9e32-086490877bc9.png', name: 'Industrial Pollution', isCollectible: false },
     { type: '/lovable-uploads/04a038af-ac30-41dc-8b7e-7da7201ab4a1.png', name: 'Burning Earth', isCollectible: false },
     { type: '/lovable-uploads/8489cb68-0478-4883-bb7d-4fbaac95936d.png', name: 'Melting Ice', isCollectible: false },
-    // New negative obstacles
+    // New negative obstacles (removed duplicate "Earth on Fire")
     { type: '/lovable-uploads/2adcbd84-6a6e-4d91-ba66-6ee1629cab8c.png', name: 'Building Explosion', isCollectible: false },
     { type: '/lovable-uploads/f850b845-c7ef-41c1-b3ba-f843d237eb75.png', name: 'Water Pollution', isCollectible: false },
     { type: '/lovable-uploads/e9f971d5-39d5-4c15-812c-5318d41f156e.png', name: 'Landfill Waste', isCollectible: false },
@@ -113,7 +113,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     { type: '/lovable-uploads/c25ec259-9f11-4e21-8f21-a0dead0a5081.png', name: 'Polluting Car', isCollectible: false },
     { type: '/lovable-uploads/b138b94d-e66b-435a-b25b-85c2a5eaf396.png', name: 'Volcanic Eruption', isCollectible: false },
     { type: '/lovable-uploads/1b4bf97e-256a-4404-8f4c-cc9e2844a9ad.png', name: 'Dead Tree', isCollectible: false },
-    { type: '/lovable-uploads/2f885168-c28e-4b54-a786-61e5c153ed91.png', name: 'Earth on Fire', isCollectible: false },
     { type: '/lovable-uploads/80707763-0cfa-43ec-b601-65d3402a36b8.png', name: 'Global Warming', isCollectible: false }
   ];
 
