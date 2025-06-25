@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -81,9 +79,9 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   // Updated collectible types with all positive environmental icons
   const collectibleTypes = [
-    // Original collectibles (minus Clean Energy Monitor)
-    { type: '/lovable-uploads/5d2bd614-4b17-4d01-9a71-ccb46a3c48bf.png', name: 'Earth with Plant', isCollectible: true },
-    { type: '/lovable-uploads/661772a0-df0b-44c6-835d-e70dea731378.png', name: 'Growing Plant', isCollectible: true },
+    // Updated collectibles with new names
+    { type: '/lovable-uploads/5d2bd614-4b17-4d01-9a71-ccb46a3c48bf.png', name: 'Climate Solutions', isCollectible: true },
+    { type: '/lovable-uploads/661772a0-df0b-44c6-835d-e70dea731378.png', name: 'Re-forestation', isCollectible: true },
     // New positive icons with updated names
     { type: '/lovable-uploads/fdf1020c-e08d-4792-861b-25357994cacb.png', name: 'Recycling', isCollectible: true },
     { type: '/lovable-uploads/9ebe3ed1-146a-48a1-b10f-ae05e19fc0d2.png', name: 'Recycling Facility', isCollectible: true },
@@ -92,29 +90,29 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     { type: '/lovable-uploads/625faf06-2454-4fdb-ad43-140d17feb034.png', name: 'Green City', isCollectible: true },
     { type: '/lovable-uploads/834a2fa7-33e5-4eb0-84c8-4fa12b573d80.png', name: 'Electric Car', isCollectible: true },
     { type: '/lovable-uploads/250e79f0-7be1-4fba-90d9-161a0ad7c425.png', name: 'Forest Trees', isCollectible: true },
-    { type: '/lovable-uploads/7d3d43b4-a80f-4c33-9ebe-56170096dfb5.png', name: 'Earth Care', isCollectible: true },
-    { type: '/lovable-uploads/18cd6e74-a8dd-4977-a2bf-c0b3bb7a92d7.png', name: 'Bottle Recycling', isCollectible: true },
-    // Two new positive icons
-    { type: '/lovable-uploads/45a325a8-4bef-4345-8822-16c4b8d0572d.png', name: 'Solar Panel', isCollectible: true },
+    { type: '/lovable-uploads/7d3d43b4-a80f-4c33-9ebe-56170096dfb5.png', name: 'Mother Earth', isCollectible: true },
+    { type: '/lovable-uploads/18cd6e74-a8dd-4977-a2bf-c0b3bb7a92d7.png', name: 'Plastic Recycling', isCollectible: true },
+    // Two new positive icons with updated names
+    { type: '/lovable-uploads/45a325a8-4bef-4345-8822-16c4b8d0572d.png', name: 'Solar Panels', isCollectible: true },
     { type: '/lovable-uploads/b399f0b5-4a11-468a-ba96-7938eaf442b9.png', name: 'Green Innovation', isCollectible: true }
   ];
 
   const obstacleTypes = [
-    // Original obstacles
-    { type: '/lovable-uploads/e74137ed-ec1b-40fa-90da-b45911ca4bb1.png', name: 'Volcano Pollution', isCollectible: false },
+    // Updated obstacles with new names
+    { type: '/lovable-uploads/e74137ed-ec1b-40fa-90da-b45911ca4bb1.png', name: 'Natural Hazards', isCollectible: false },
     { type: '/lovable-uploads/56cf7f85-b5d9-49b0-9a71-70cc5c28a059.png', name: 'Acid Rain', isCollectible: false },
-    { type: '/lovable-uploads/fbd8c804-0bf1-4502-a2e6-05bddbb62f3e.png', name: 'CO2 Emissions', isCollectible: false },
+    { type: '/lovable-uploads/fbd8c804-0bf1-4502-a2e6-05bddbb62f3e.png', name: 'Ozone Depletion', isCollectible: false },
     { type: '/lovable-uploads/0b899ce6-89d1-4540-9e32-086490877bc9.png', name: 'Industrial Pollution', isCollectible: false },
-    { type: '/lovable-uploads/04a038af-ac30-41dc-8b7e-7da7201ab4a1.png', name: 'Burning Earth', isCollectible: false },
+    { type: '/lovable-uploads/04a038af-ac30-41dc-8b7e-7da7201ab4a1.png', name: 'Rising Average Temperature', isCollectible: false },
     { type: '/lovable-uploads/8489cb68-0478-4883-bb7d-4fbaac95936d.png', name: 'Melting Ice', isCollectible: false },
-    // New negative obstacles (removed duplicate "Earth on Fire")
-    { type: '/lovable-uploads/2adcbd84-6a6e-4d91-ba66-6ee1629cab8c.png', name: 'Building Explosion', isCollectible: false },
+    // New negative obstacles with updated names
+    { type: '/lovable-uploads/2adcbd84-6a6e-4d91-ba66-6ee1629cab8c.png', name: 'Building Demolition', isCollectible: false },
     { type: '/lovable-uploads/f850b845-c7ef-41c1-b3ba-f843d237eb75.png', name: 'Water Pollution', isCollectible: false },
     { type: '/lovable-uploads/e9f971d5-39d5-4c15-812c-5318d41f156e.png', name: 'Landfill Waste', isCollectible: false },
-    { type: '/lovable-uploads/6e1995d3-e7c1-45b4-86db-b28a327e0430.png', name: 'CO2 Cloud', isCollectible: false },
-    { type: '/lovable-uploads/c25ec259-9f11-4e21-8f21-a0dead0a5081.png', name: 'Polluting Car', isCollectible: false },
+    { type: '/lovable-uploads/6e1995d3-e7c1-45b4-86db-b28a327e0430.png', name: 'Carbon Emission', isCollectible: false },
+    { type: '/lovable-uploads/c25ec259-9f11-4e21-8f21-a0dead0a5081.png', name: 'Pollution', isCollectible: false },
     { type: '/lovable-uploads/b138b94d-e66b-435a-b25b-85c2a5eaf396.png', name: 'Volcanic Eruption', isCollectible: false },
-    { type: '/lovable-uploads/1b4bf97e-256a-4404-8f4c-cc9e2844a9ad.png', name: 'Dead Tree', isCollectible: false },
+    { type: '/lovable-uploads/1b4bf97e-256a-4404-8f4c-cc9e2844a9ad.png', name: 'Drought', isCollectible: false },
     { type: '/lovable-uploads/80707763-0cfa-43ec-b601-65d3402a36b8.png', name: 'Global Warming', isCollectible: false }
   ];
 
