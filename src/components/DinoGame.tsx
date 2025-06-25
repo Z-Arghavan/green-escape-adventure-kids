@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, RotateCcw, Trophy, User } from 'lucide-react';
 
 interface DinoGameProps {
   onGameComplete: (code: string) => void;
@@ -9,14 +10,24 @@ interface DinoGameProps {
   selectedLanguage: 'en' | 'nl';
 }
 
+interface ScoreEntry {
+  nickname: string;
+  score: number;
+  timestamp: number;
+}
+
 const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLanguage }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameLoopRef = useRef<number>();
-  const [gameState, setGameState] = useState<'playing' | 'gameOver' | 'waiting'>('waiting');
+  const [gameState, setGameState] = useState<'nickname' | 'playing' | 'gameOver' | 'waiting'>('nickname');
+  const [nickname, setNickname] = useState('');
   const [score, setScore] = useState(0);
   const [hits, setHits] = useState(0);
   const [gamesPlayed, setGamesPlayed] = useState(0);
   const [showCode, setShowCode] = useState(false);
+  const [showScoreboard, setShowScoreboard] = useState(false);
+  const [globalScores, setGlobalScores] = useState<ScoreEntry[]>([]);
+  const [userRank, setUserRank] = useState<number>(0);
   const [inventory, setInventory] = useState<Array<{type: string, name: string}>>([]);
   const [avoidedChallenges, setAvoidedChallenges] = useState<Array<{type: string, name: string}>>([]);
   const [pointsAnimations, setPointsAnimations] = useState<Array<{id: number, points: string, x: number, y: number, color: string}>>([]);
@@ -25,6 +36,9 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const translations = {
     en: {
       title: "Sustainable Dino Game",
+      nicknamePrompt: "Enter your nickname to join the global scoreboard:",
+      nicknamePlaceholder: "Your nickname",
+      joinScoreboard: "Join Scoreboard",
       instructions: "Look at the icons! Jump from the negative environmental impacts and challenges! But go ahead and collect the positive environmental solutions!",
       spaceInstructions: "Use SPACE key or click the game area to jump! Double jump available!",
       start: "Start Game",
@@ -40,10 +54,20 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       back: "Back to Instructions",
       inventory: "Collected Items:",
       avoidedChallenges: "Avoided Environmental Challenges:",
-      collected: "Collected"
+      collected: "Collected",
+      globalScoreboard: "Global Scoreboard",
+      yourRank: "Your Rank",
+      viewScoreboard: "View Global Scoreboard",
+      backToCode: "Back to Code",
+      rank: "Rank",
+      player: "Player",
+      finalScore: "Final Score"
     },
     nl: {
       title: "Duurzame Dino Spel",
+      nicknamePrompt: "Voer je bijnaam in om mee te doen aan het wereldwijde scorebord:",
+      nicknamePlaceholder: "Je bijnaam",
+      joinScoreboard: "Doe Mee aan Scorebord",
       instructions: "Kijk naar de iconen! Spring weg van de negatieve milieu-impacts en uitdagingen! Maar ga ervoor en verzamel de positieve milieu-oplossingen!",
       spaceInstructions: "Gebruik de SPATIE toets of klik op het speelveld om te springen! Dubbel springen mogelijk!",
       start: "Start Spel",
@@ -59,7 +83,14 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       back: "Terug naar Instructies",
       inventory: "Verzamelde Items:",
       avoidedChallenges: "Vermeden Milieu Uitdagingen:",
-      collected: "Verzameld"
+      collected: "Verzameld",
+      globalScoreboard: "Wereldwijd Scorebord",
+      yourRank: "Je Positie",
+      viewScoreboard: "Bekijk Wereldwijd Scorebord",
+      backToCode: "Terug naar Code",
+      rank: "Positie",
+      player: "Speler",
+      finalScore: "EindScore"
     }
   };
 
@@ -115,6 +146,51 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     { type: '/lovable-uploads/1b4bf97e-256a-4404-8f4c-cc9e2844a9ad.png', name: 'Drought', isCollectible: false },
     { type: '/lovable-uploads/80707763-0cfa-43ec-b601-65d3402a36b8.png', name: 'Global Warming', isCollectible: false }
   ];
+
+  // Load global scores from localStorage
+  useEffect(() => {
+    const savedScores = localStorage.getItem('dinoGameScores');
+    if (savedScores) {
+      setGlobalScores(JSON.parse(savedScores));
+    }
+  }, []);
+
+  // Calculate final score
+  const calculateFinalScore = useCallback(() => {
+    const inventoryScore = inventory.length * 100;
+    const avoidedScore = avoidedChallenges.length * 50;
+    const completionBonus = 200; // For completing all 3 games
+    return inventoryScore + avoidedScore + completionBonus;
+  }, [inventory, avoidedChallenges]);
+
+  // Save score to global scoreboard
+  const saveToScoreboard = useCallback(() => {
+    const finalScore = calculateFinalScore();
+    const newEntry: ScoreEntry = {
+      nickname,
+      score: finalScore,
+      timestamp: Date.now()
+    };
+
+    const updatedScores = [...globalScores, newEntry]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 100); // Keep top 100 scores
+
+    setGlobalScores(updatedScores);
+    localStorage.setItem('dinoGameScores', JSON.stringify(updatedScores));
+
+    // Find user's rank
+    const rank = updatedScores.findIndex(entry => 
+      entry.nickname === nickname && entry.timestamp === newEntry.timestamp
+    ) + 1;
+    setUserRank(rank);
+  }, [nickname, globalScores, calculateFinalScore]);
+
+  const handleNicknameSubmit = () => {
+    if (nickname.trim()) {
+      setGameState('waiting');
+    }
+  };
 
   // Load images
   useEffect(() => {
@@ -212,6 +288,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     }
   }, []);
 
+  // Game loop function
   const gameLoop = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -388,6 +465,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     }
   }, [addPointsAnimation, checkItemOverlap, loadedImages]);
 
+  // Key handling and game loop
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
@@ -438,6 +516,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       resetGame();
     } else {
       setGamesPlayed(3);
+      saveToScoreboard();
       setShowCode(true);
     }
   };
@@ -446,6 +525,123 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     onGameComplete('154');
   };
 
+  const handleViewScoreboard = () => {
+    setShowScoreboard(true);
+  };
+
+  const handleBackToCode = () => {
+    setShowScoreboard(false);
+  };
+
+  // Nickname input screen
+  if (gameState === 'nickname') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
+        <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-md mx-auto">
+          <CardContent className="p-8 text-center space-y-6">
+            <div className="text-4xl mb-4">🏆</div>
+            <h2 className="text-2xl font-bold text-gray-800">{t.title}</h2>
+            <p className="text-gray-600">{t.nicknamePrompt}</p>
+            
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <User className="h-5 w-5 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder={t.nicknamePlaceholder}
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleNicknameSubmit()}
+                  className="flex-1"
+                  maxLength={20}
+                />
+              </div>
+              
+              <Button 
+                onClick={handleNicknameSubmit}
+                disabled={!nickname.trim()}
+                className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold"
+              >
+                <Trophy className="mr-2 h-4 w-4" />
+                {t.joinScoreboard}
+              </Button>
+            </div>
+            
+            <Button 
+              onClick={onBack}
+              variant="outline"
+              className="w-full"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {t.back}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Scoreboard screen
+  if (showScoreboard) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
+        <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-2xl mx-auto">
+          <CardContent className="p-8">
+            <div className="text-center mb-6">
+              <div className="text-4xl mb-4">🏆</div>
+              <h2 className="text-2xl font-bold text-gray-800">{t.globalScoreboard}</h2>
+              {userRank > 0 && (
+                <p className="text-lg text-green-600 font-semibold mt-2">
+                  {t.yourRank}: #{userRank}
+                </p>
+              )}
+            </div>
+            
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {globalScores.slice(0, 10).map((entry, index) => (
+                <div 
+                  key={`${entry.nickname}-${entry.timestamp}`}
+                  className={`flex items-center justify-between p-3 rounded-lg ${
+                    entry.nickname === nickname && entry.timestamp === globalScores.find(s => s.nickname === nickname)?.timestamp
+                      ? 'bg-green-100 border-2 border-green-400' 
+                      : 'bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="font-bold text-lg w-8">
+                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                    </span>
+                    <span className="font-medium">{entry.nickname}</span>
+                  </div>
+                  <span className="font-bold text-green-600">{entry.score}</span>
+                </div>
+              ))}
+              
+              {globalScores.length === 0 && (
+                <div className="text-center text-gray-500 py-8">
+                  No scores yet. Be the first to play!
+                </div>
+              )}
+            </div>
+            
+            <div className="text-center mt-6 space-y-3">
+              <p className="text-sm text-gray-600">
+                {t.finalScore}: {calculateFinalScore()}
+              </p>
+              <Button 
+                onClick={handleBackToCode}
+                className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold"
+              >
+                {t.backToCode}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Code completion screen
   if (showCode) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
@@ -461,13 +657,34 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
             
             <p className="text-gray-600">{t.useThisCode}</p>
             
+            {userRank > 0 && (
+              <div className="bg-blue-100 p-4 rounded-lg">
+                <p className="text-blue-800 font-semibold">
+                  {t.yourRank}: #{userRank}
+                </p>
+                <p className="text-sm text-blue-600">
+                  {t.finalScore}: {calculateFinalScore()}
+                </p>
+              </div>
+            )}
+            
             <div className="space-y-3">
+              <Button 
+                onClick={handleViewScoreboard}
+                variant="outline"
+                className="w-full"
+              >
+                <Trophy className="mr-2 h-4 w-4" />
+                {t.viewScoreboard}
+              </Button>
+              
               <Button 
                 onClick={handleComplete}
                 className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold"
               >
                 Continue
               </Button>
+              
               <Button 
                 onClick={onBack}
                 variant="outline"
@@ -491,6 +708,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
             <h1 className="text-3xl font-bold text-gray-800 mb-2">{t.title}</h1>
             <p className="text-gray-600 mb-2">{t.instructions}</p>
             <p className="text-sm text-blue-600 font-semibold mb-4">{t.spaceInstructions}</p>
+            <p className="text-sm text-purple-600 font-medium">Playing as: {nickname}</p>
           </div>
 
           {inventory.length > 0 && (
