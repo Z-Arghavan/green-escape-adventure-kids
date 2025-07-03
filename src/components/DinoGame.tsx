@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, RotateCcw, Trophy, User } from 'lucide-react';
+import { ArrowLeft, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DinoGameProps {
@@ -11,656 +11,405 @@ interface DinoGameProps {
   selectedLanguage: 'en' | 'nl';
 }
 
-interface ScoreEntry {
-  nickname: string;
-  score: number;
-  timestamp: number;
+interface Obstacle {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  speed: number;
 }
 
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 200;
+const DINO_START_X = 50;
+const DINO_START_Y = CANVAS_HEIGHT - 30;
+const DINO_WIDTH = 20;
+const DINO_HEIGHT = 30;
+const GRAVITY = 0.5;
+const JUMP_SPEED = -10;
+const OBSTACLE_SPEED = 5;
+const OBSTACLE_SPAWN_RATE = 150; // Lower number = more frequent
+const SCORE_INCREMENT = 10;
+
+const getRandomNumber = (min: number, max: number): number => {
+  return Math.random() * (max - min) + min;
+};
+
 const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLanguage }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const gameLoopRef = useRef<number>();
-  const [gameState, setGameState] = useState<'nickname' | 'playing' | 'gameOver' | 'waiting'>('nickname');
-  const [nickname, setNickname] = useState('');
+  const [dinoY, setDinoY] = useState(DINO_START_Y);
+  const [dinoYSpeed, setDinoYSpeed] = useState(0);
+  const [isJumping, setIsJumping] = useState(false);
+  const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [score, setScore] = useState(0);
-  const [hits, setHits] = useState(0);
-  const [gamesPlayed, setGamesPlayed] = useState(0);
-  const [gameScores, setGameScores] = useState<number[]>([]);
-  const [showScoreboard, setShowScoreboard] = useState(false);
-  const [globalScores, setGlobalScores] = useState<ScoreEntry[]>([]);
-  const [userRank, setUserRank] = useState<number>(0);
-  const [inventory, setInventory] = useState<Array<{type: string, name: string}>>([]);
-  const [avoidedChallenges, setAvoidedChallenges] = useState<Array<{type: string, name: string}>>([]);
-  const [pointsAnimations, setPointsAnimations] = useState<Array<{id: number, points: string, x: number, y: number, color: string}>>([]);
-  const [loadedImages, setLoadedImages] = useState<{[key: string]: HTMLImageElement}>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [highScore, setHighScore] = useState(0);
+  const [gameRunning, setGameRunning] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [scores, setScores] = useState<number[]>([]);
+  const [currentGame, setCurrentGame] = useState(1);
+  const [gameComplete, setGameComplete] = useState(false);
+  const [nickname, setNickname] = useState('');
+  const [isSubmittingScore, setIsSubmittingScore] = useState(false);
+  const [nicknameError, setNicknameError] = useState<string | null>(null);
+  const [suggestedNickname, setSuggestedNickname] = useState<string | null>(null);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number>(0);
 
   const translations = {
     en: {
-      title: "Sustainable Dino Game",
-      nicknamePrompt: "Enter your nickname to join the global scoreboard:",
-      nicknamePlaceholder: "Your nickname",
-      joinScoreboard: "Join Scoreboard",
-      instructions: "Look at the icons! Jump from the negative environmental impacts and challenges! But go ahead and collect the positive environmental solutions!",
-      spaceInstructions: "Use SPACE key or click the game area to jump! Double jump available!",
-      start: "Start Game",
-      restart: "Restart Game",
-      tryAgain: "Try Again",
-      gameOver: "Game Over!",
+      title: "The Green Dino Game",
+      pressSpace: "Press SPACE to jump",
       score: "Score",
-      hits: "Hits",
-      gamesLeft: "Games left",
-      completed: "Well done! You've completed all 3 games!",
-      back: "Back to Instructions",
-      inventory: "Collected Items:",
-      avoidedChallenges: "Avoided Environmental Challenges:",
-      collected: "Collected",
-      globalScoreboard: "Global Scoreboard",
-      yourRank: "Your Rank",
-      viewScoreboard: "View Global Scoreboard",
-      backToGame: "Back to Game",
-      rank: "Rank",
-      player: "Player",
+      highScore: "High Score",
+      gameOver: "Game Over!",
+      restart: "Restart",
+      backToMenu: "Back to Menu",
+      gameComplete: "Game Complete!",
+      yourScores: "Your Scores",
+      game: "Game",
+      highestScore: "Highest Score",
+      enterNickname: "Enter Nickname",
+      nickname: "Nickname",
+      submitScore: "Submit Score",
+      submitting: "Submitting...",
+      nextGame: `Start Game ${currentGame + 1}`,
       finalScore: "Final Score",
-      highestGameScore: "Highest Game Score",
-      continue: "Continue",
-      submittingScore: "Submitting score..."
     },
     nl: {
-      title: "Duurzame Dino Spel",
-      nicknamePrompt: "Voer je bijnaam in om mee te doen aan het wereldwijde scorebord:",
-      nicknamePlaceholder: "Je bijnaam",
-      joinScoreboard: "Doe Mee aan Scorebord",
-      instructions: "Kijk naar de iconen! Spring weg van de negatieve milieu-impacts en uitdagingen! Maar ga ervoor en verzamel de positieve milieu-oplossingen!",
-      spaceInstructions: "Gebruik de SPATIE toets of klik op het speelveld om te springen! Dubbel springen mogelijk!",
-      start: "Start Spel",
-      restart: "Herstart Spel",
-      tryAgain: "Probeer Opnieuw",
-      gameOver: "Game Over!",
+      title: "Het Groene Dino Spel",
+      pressSpace: "Druk op SPATIE om te springen",
       score: "Score",
-      hits: "Treffers",
-      gamesLeft: "Spellen over",
-      completed: "Goed gedaan! Je hebt alle 3 spellen voltooid!",
-      back: "Terug naar Instructies",
-      inventory: "Verzamelde Items:",
-      avoidedChallenges: "Vermeden Milieu Uitdagingen:",
-      collected: "Verzameld",
-      globalScoreboard: "Wereldwijd Scorebord",
-      yourRank: "Je Positie",
-      viewScoreboard: "Bekijk Wereldwijd Scorebord",
-      backToGame: "Terug naar Spel",
-      rank: "Positie",
-      player: "Speler",
-      finalScore: "EindScore",
-      highestGameScore: "Hoogste Spel Score",
-      continue: "Doorgaan",
-      submittingScore: "Score indienen..."
+      highScore: "High Score",
+      gameOver: "Game Over!",
+      restart: "Opnieuw starten",
+      backToMenu: "Terug naar Menu",
+      gameComplete: "Spel Voltooid!",
+      yourScores: "Jouw Scores",
+      game: "Spel",
+      highestScore: "Hoogste Score",
+      enterNickname: "Voer Nickname In",
+      nickname: "Nickname",
+      submitScore: "Score Indienen",
+      submitting: "Indienen...",
+      nextGame: `Start Spel ${currentGame + 1}`,
+      finalScore: "Eindscore",
     }
   };
 
   const t = translations[selectedLanguage];
 
-  // Game objects
-  const gameRef = useRef({
-    dino: { x: 50, y: 200, width: 50, height: 50, velocityY: 0, isJumping: false, jumpCount: 0 },
-    collectibles: [] as Array<{ x: number; y: number; width: number; height: number; type: string; name: string; isCollectible: boolean }>,
-    clouds: [] as Array<{ x: number; y: number; speed: number; size: number }>,
-    gameSpeed: 2,
-    score: 0,
-    hits: 0,
-    gameRunning: false,
-    lastSpawnTime: 0
-  });
+  const resetGame = () => {
+    setDinoY(DINO_START_Y);
+    setDinoYSpeed(0);
+    setIsJumping(false);
+    setObstacles([]);
+    setScore(0);
+    setGameRunning(false);
+    setGameOver(false);
+  };
 
-  const collectibleTypes = [
-    { type: '/lovable-uploads/5d2bd614-4b17-4d01-9a71-ccb46a3c48bf.png', name: 'Climate Solutions', isCollectible: true },
-    { type: '/lovable-uploads/661772a0-df0b-44c6-835d-e70dea731378.png', name: 'Re-forestation', isCollectible: true },
-    { type: '/lovable-uploads/fdf1020c-e08d-4792-861b-25357994cacb.png', name: 'Recycling', isCollectible: true },
-    { type: '/lovable-uploads/9ebe3ed1-146a-48a1-b10f-ae05e19fc0d2.png', name: 'Recycling Facility', isCollectible: true },
-    { type: '/lovable-uploads/721167ab-50cc-4d95-8bfe-77c33abc2d15.png', name: 'Waste Sorting', isCollectible: true },
-    { type: '/lovable-uploads/0178c8ca-ee9f-457e-b478-b15b231207ca.png', name: 'Wind Turbines', isCollectible: true },
-    { type: '/lovable-uploads/625faf06-2454-4fdb-ad43-140d17feb034.png', name: 'Green City', isCollectible: true },
-    { type: '/lovable-uploads/834a2fa7-33e5-4eb0-84c8-4fa12b573d80.png', name: 'Electric Car', isCollectible: true },
-    { type: '/lovable-uploads/250e79f0-7be1-4fba-90d9-161a0ad7c425.png', name: 'Forest Trees', isCollectible: true },
-    { type: '/lovable-uploads/7d3d43b4-a80f-4c33-9ebe-56170096dfb5.png', name: 'Mother Earth', isCollectible: true },
-    { type: '/lovable-uploads/18cd6e74-a8dd-4977-a2bf-c0b3bb7a92d7.png', name: 'Plastic Recycling', isCollectible: true },
-    { type: '/lovable-uploads/45a325a8-4bef-4345-8822-16c4b8d0572d.png', name: 'Solar Panels', isCollectible: true },
-    { type: '/lovable-uploads/b399f0b5-4a11-468a-ba96-7938eaf442b9.png', name: 'Green Innovation', isCollectible: true }
-  ];
+  const startGame = () => {
+    resetGame();
+    setGameRunning(true);
+    setGameOver(false);
+    animationFrameRef.current = requestAnimationFrame(gameLoop);
+  };
 
-  const obstacleTypes = [
-    { type: '/lovable-uploads/e74137ed-ec1b-40fa-90da-b45911ca4bb1.png', name: 'Natural Hazards', isCollectible: false },
-    { type: '/lovable-uploads/56cf7f85-b5d9-49b0-9a71-70cc5c28a059.png', name: 'Acid Rain', isCollectible: false },
-    { type: '/lovable-uploads/fbd8c804-0bf1-4502-a2e6-05bddbb62f3e.png', name: 'Ozone Depletion', isCollectible: false },
-    { type: '/lovable-uploads/0b899ce6-89d1-4540-9e32-086490877bc9.png', name: 'Industrial Pollution', isCollectible: false },
-    { type: '/lovable-uploads/04a038af-ac30-41dc-8b7e-7da7201ab4a1.png', name: 'Rising Average Temperature', isCollectible: false },
-    { type: '/lovable-uploads/8489cb68-0478-4883-bb7d-4fbaac95936d.png', name: 'Melting Ice', isCollectible: false },
-    { type: '/lovable-uploads/2adcbd84-6a6e-4d91-ba66-6ee1629cab8c.png', name: 'Building Demolition', isCollectible: false },
-    { type: '/lovable-uploads/f850b845-c7ef-41c1-b3ba-f843d237eb75.png', name: 'Water Pollution', isCollectible: false },
-    { type: '/lovable-uploads/e9f971d5-39d5-4c15-812c-5318d41f156e.png', name: 'Landfill Waste', isCollectible: false },
-    { type: '/lovable-uploads/6e1995d3-e7c1-45b4-86db-b28a327e0430.png', name: 'Carbon Emission', isCollectible: false },
-    { type: '/lovable-uploads/c25ec259-9f11-4e21-8f21-a0dead0a5081.png', name: 'Pollution', isCollectible: false },
-    { type: '/lovable-uploads/b138b94d-e66b-435a-b25b-85c2a5eaf396.png', name: 'Volcanic Eruption', isCollectible: false },
-    { type: '/lovable-uploads/1b4bf97e-256a-4404-8f4c-cc9e2844a9ad.png', name: 'Drought', isCollectible: false },
-    { type: '/lovable-uploads/80707763-0cfa-43ec-b601-65d3402a36b8.png', name: 'Global Warming', isCollectible: false }
-  ];
+  const endGame = () => {
+    setGameRunning(false);
+    setGameOver(true);
+    cancelAnimationFrame(animationFrameRef.current);
+  };
 
-  // Load global scores from Supabase
-  const loadGlobalScores = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('leaderboard')
-        .select('*')
-        .order('highest_score', { ascending: false })
-        .limit(100);
+  const jump = () => {
+    if (!isJumping) {
+      setIsJumping(true);
+      setDinoYSpeed(JUMP_SPEED);
+    }
+  };
 
-      if (error) {
-        console.error('Error loading global scores:', error);
-        return;
+  const updateDino = () => {
+    setDinoY((prevDinoY) => {
+      const newY = prevDinoY + dinoYSpeed;
+      if (newY < DINO_START_Y) {
+        setDinoYSpeed(dinoYSpeed + GRAVITY);
+        return newY;
+      } else {
+        setIsJumping(false);
+        setDinoYSpeed(0);
+        return DINO_START_Y;
       }
+    });
+  };
 
-      const scores = data.map(entry => ({
-        nickname: entry.nickname,
-        score: entry.highest_score,
-        timestamp: new Date(entry.created_at).getTime()
+  const updateObstacles = () => {
+    setObstacles((prevObstacles) => {
+      const newObstacles = prevObstacles.map(obstacle => ({
+        ...obstacle,
+        x: obstacle.x - obstacle.speed,
       }));
 
-      setGlobalScores(scores);
-    } catch (error) {
-      console.error('Error loading global scores:', error);
+      const updatedObstacles = newObstacles.filter(obstacle => obstacle.x + obstacle.width > 0);
+
+      if (Math.random() * OBSTACLE_SPAWN_RATE < 1) {
+        updatedObstacles.push({
+          x: CANVAS_WIDTH,
+          y: CANVAS_HEIGHT - 20,
+          width: 20,
+          height: 20,
+          speed: OBSTACLE_SPEED,
+        });
+      }
+
+      return updatedObstacles;
+    });
+  };
+
+  const checkCollisions = () => {
+    for (const obstacle of obstacles) {
+      if (
+        DINO_START_X < obstacle.x + obstacle.width &&
+        DINO_START_X + DINO_WIDTH > obstacle.x &&
+        dinoY < obstacle.y + obstacle.height &&
+        dinoY + DINO_HEIGHT > obstacle.y
+      ) {
+        endGame();
+        return;
+      }
     }
-  }, []);
+  };
+
+  const updateScore = () => {
+    setScore((prevScore) => prevScore + SCORE_INCREMENT);
+    setHighScore((prevHighScore) => Math.max(prevHighScore, score));
+  };
+
+  const draw = () => {
+    if (!canvasRef.current) return;
+    const ctx = canvasRef.current.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // Draw Dino
+    ctx.fillStyle = 'green';
+    ctx.fillRect(DINO_START_X, dinoY, DINO_WIDTH, DINO_HEIGHT);
+
+    // Draw Obstacles
+    ctx.fillStyle = 'red';
+    obstacles.forEach(obstacle => {
+      ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+    });
+
+    // Draw Score
+    ctx.fillStyle = 'black';
+    ctx.font = '16px sans-serif';
+    ctx.fillText(`${t.score}: ${score}`, 10, 20);
+    ctx.fillText(`${t.highScore}: ${highScore}`, 10, 40);
+  };
+
+  const gameLoop = () => {
+    if (!gameRunning) return;
+
+    updateDino();
+    updateObstacles();
+    checkCollisions();
+    updateScore();
+    draw();
+
+    animationFrameRef.current = requestAnimationFrame(gameLoop);
+  };
+
+  const handleCanvasClick = () => {
+    if (gameRunning) {
+      jump();
+    } else {
+      startGame();
+    }
+  };
+
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (event.code === 'Space') {
+      event.preventDefault();
+      if (gameRunning) {
+        jump();
+      } else {
+        startGame();
+      }
+    }
+  }, [gameRunning, startGame, jump]);
 
   useEffect(() => {
-    loadGlobalScores();
-  }, [loadGlobalScores]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      cancelAnimationFrame(animationFrameRef.current);
+    };
+  }, [handleKeyDown]);
 
-  // Calculate final score
-  const calculateFinalScore = useCallback(() => {
-    const inventoryScore = inventory.length * 100;
-    const avoidedScore = avoidedChallenges.length * 50;
-    const completionBonus = 200;
-    return inventoryScore + avoidedScore + completionBonus;
-  }, [inventory, avoidedChallenges]);
+  const handleRestart = () => {
+    resetGame();
+    startGame();
+  };
 
-  // Get highest individual game score
-  const getHighestGameScore = useCallback(() => {
-    return gameScores.length > 0 ? Math.max(...gameScores) : 0;
-  }, [gameScores]);
+  const handleNextGame = () => {
+    setScores([...scores, score]);
+    resetGame();
 
-  // Save score to Supabase
-  const saveToSupabase = useCallback(async () => {
+    if (currentGame < 3) {
+      setCurrentGame(currentGame + 1);
+      startGame();
+    } else {
+      setGameComplete(true);
+      setGameRunning(false);
+    }
+  };
+
+  const generateGreenSuggestion = (originalNickname: string): string => {
+    const greenWords = ['Eco', 'Green', 'Leaf', 'Nature', 'Forest', 'Earth', 'Plant', 'Solar', 'Wind', 'Ocean'];
+    const randomGreen = greenWords[Math.floor(Math.random() * greenWords.length)];
+    return `${originalNickname}${randomGreen}`;
+  };
+
+  const submitScore = async () => {
     if (!nickname.trim()) return;
-
-    setIsSubmitting(true);
+    
+    setIsSubmittingScore(true);
+    setNicknameError(null);
+    setSuggestedNickname(null);
+    
     try {
-      const finalScore = calculateFinalScore();
-      const highestGameScore = getHighestGameScore();
-      const scoreToSave = Math.max(finalScore, highestGameScore);
-
+      const highestScore = Math.max(...scores);
+      
       const { error } = await supabase
         .from('leaderboard')
         .insert({
           nickname: nickname.trim(),
-          highest_score: scoreToSave,
+          highest_score: highestScore,
           games_played: 3
         });
 
       if (error) {
-        console.error('Error saving score:', error);
-        return;
-      }
-
-      // Reload global scores to get updated leaderboard
-      await loadGlobalScores();
-
-      // Find user's rank
-      const rank = globalScores.findIndex(entry => 
-        entry.nickname === nickname && entry.score === scoreToSave
-      ) + 1;
-      setUserRank(rank);
-
-    } catch (error) {
-      console.error('Error saving score:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [nickname, calculateFinalScore, getHighestGameScore, loadGlobalScores, globalScores]);
-
-  const handleNicknameSubmit = () => {
-    if (nickname.trim()) {
-      setGameState('waiting');
-    }
-  };
-
-  useEffect(() => {
-    const loadImages = async () => {
-      const allItems = [...collectibleTypes, ...obstacleTypes];
-      console.log('Loading images for', allItems.length, 'items');
-      
-      const imagePromises = allItems.map(item => {
-        return new Promise<{key: string, img: HTMLImageElement}>((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => {
-            console.log('Successfully loaded image:', item.type);
-            resolve({ key: item.type, img });
-          };
-          img.onerror = (error) => {
-            console.error('Failed to load image:', item.type, error);
-            reject(error);
-          };
-          img.src = item.type;
-        });
-      });
-
-      try {
-        const results = await Promise.all(imagePromises);
-        const imageMap: {[key: string]: HTMLImageElement} = {};
-        results.forEach(({ key, img }) => {
-          imageMap[key] = img;
-        });
-        console.log('All images loaded successfully:', Object.keys(imageMap).length);
-        setLoadedImages(imageMap);
-      } catch (error) {
-        console.error('Failed to load some images:', error);
-      }
-    };
-
-    loadImages();
-  }, []);
-
-  const addPointsAnimation = useCallback((points: string, x: number, y: number, color: string) => {
-    const id = Date.now() + Math.random();
-    setPointsAnimations(prev => [...prev, { id, points, x, y, color }]);
-    setTimeout(() => {
-      setPointsAnimations(prev => prev.filter(anim => anim.id !== id));
-    }, 1500);
-  }, []);
-
-  const checkItemOverlap = useCallback((newX: number, newY: number, newWidth: number, newHeight: number) => {
-    const game = gameRef.current;
-    const minDistance = 80;
-    
-    return game.collectibles.some(item => {
-      const distance = Math.sqrt(
-        Math.pow(newX - item.x, 2) + Math.pow(newY - item.y, 2)
-      );
-      return distance < minDistance;
-    });
-  }, []);
-
-  const resetGame = useCallback(() => {
-    const game = gameRef.current;
-    game.dino = { x: 50, y: 200, width: 50, height: 50, velocityY: 0, isJumping: false, jumpCount: 0 };
-    game.collectibles = [];
-    game.clouds = [
-      { x: 200, y: 50, speed: 0.5, size: 40 },
-      { x: 500, y: 80, speed: 0.3, size: 50 },
-      { x: 800, y: 40, speed: 0.7, size: 35 },
-      { x: 1000, y: 60, speed: 0.4, size: 45 }
-    ];
-    game.gameSpeed = 2;
-    game.score = 0;
-    game.hits = 0;
-    game.gameRunning = true;
-    game.lastSpawnTime = 0;
-    setScore(0);
-    setHits(0);
-    setGameState('playing');
-    setInventory([]);
-    setAvoidedChallenges([]);
-    setPointsAnimations([]);
-  }, []);
-
-  const startGame = useCallback(() => {
-    resetGame();
-  }, [resetGame]);
-
-  const restartCurrentGame = useCallback(() => {
-    resetGame();
-  }, [resetGame]);
-
-  const jump = useCallback(() => {
-    const game = gameRef.current;
-    if (game.gameRunning && game.dino.jumpCount < 2) {
-      game.dino.velocityY = -18;
-      game.dino.isJumping = true;
-      game.dino.jumpCount++;
-    }
-  }, []);
-
-  const gameLoop = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const game = gameRef.current;
-    
-    if (!game.gameRunning) return;
-
-    const currentTime = Date.now();
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    game.clouds.forEach((cloud, index) => {
-      cloud.x -= cloud.speed;
-      if (cloud.x < -cloud.size) {
-        cloud.x = canvas.width + cloud.size;
-        const otherClouds = game.clouds.filter((_, i) => i !== index);
-        while (otherClouds.some(other => Math.abs(cloud.x - other.x) < 150)) {
-          cloud.x += 50;
-        }
-      }
-      
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.font = `${cloud.size}px Arial`;
-      ctx.fillText('☁️', cloud.x, cloud.y);
-    });
-
-    game.dino.velocityY += 0.8;
-    game.dino.y += game.dino.velocityY;
-
-    if (game.dino.y >= 200) {
-      game.dino.y = 200;
-      game.dino.velocityY = 0;
-      game.dino.isJumping = false;
-      game.dino.jumpCount = 0;
-    }
-
-    ctx.fillStyle = '#8B5CF6';
-    ctx.fillRect(0, 235, canvas.width, 15);
-
-    ctx.save();
-    ctx.font = '55px Arial';
-    ctx.scale(-1, 1);
-    ctx.fillText('🦖', -game.dino.x - 55, game.dino.y + 40);
-    ctx.restore();
-
-    if (currentTime - game.lastSpawnTime > 1000 && Math.random() < 0.02) {
-      const allItems = [...collectibleTypes, ...obstacleTypes];
-      const itemType = allItems[Math.floor(Math.random() * allItems.length)];
-      const newX = canvas.width;
-      const newY = itemType.isCollectible ? 175 : 180;
-      const newWidth = 70;
-      const newHeight = 70;
-      
-      if (!checkItemOverlap(newX, newY, newWidth, newHeight)) {
-        game.collectibles.push({
-          x: newX,
-          y: newY,
-          width: newWidth,
-          height: newHeight,
-          type: itemType.type,
-          name: itemType.name,
-          isCollectible: itemType.isCollectible
-        });
-        game.lastSpawnTime = currentTime;
-      }
-    }
-
-    game.collectibles = game.collectibles.filter(item => {
-      item.x -= game.gameSpeed;
-
-      const img = loadedImages[item.type];
-      if (img) {
-        ctx.drawImage(img, item.x, item.y, item.width, item.height);
-      } else {
-        ctx.fillStyle = item.isCollectible ? '#22c55e' : '#ef4444';
-        ctx.fillRect(item.x, item.y, item.width, item.height);
+        console.error('Error submitting score:', error);
         
-        ctx.fillStyle = 'white';
-        ctx.font = '30px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(
-          item.isCollectible ? '♻️' : '💨', 
-          item.x + item.width/2, 
-          item.y + item.height/2 + 10
-        );
-        ctx.textAlign = 'left';
-        
-        console.log('Image not loaded for:', item.type, 'Using fallback display');
-      }
-
-      const dinoHitbox = {
-        x: game.dino.x + 8,
-        y: game.dino.y + 8,
-        width: game.dino.width - 16,
-        height: game.dino.height - 16
-      };
-
-      const itemHitbox = {
-        x: item.x + (item.isCollectible ? 8 : 12),
-        y: item.y + (item.isCollectible ? 8 : 12),
-        width: item.width - (item.isCollectible ? 16 : 24),
-        height: item.height - (item.isCollectible ? 16 : 24)
-      };
-
-      if (
-        dinoHitbox.x < itemHitbox.x + itemHitbox.width &&
-        dinoHitbox.x + dinoHitbox.width > itemHitbox.x &&
-        dinoHitbox.y < itemHitbox.y + itemHitbox.height &&
-        dinoHitbox.y + dinoHitbox.height > itemHitbox.y
-      ) {
-        if (item.isCollectible) {
-          setInventory(prev => {
-            const existing = prev.find(inv => inv.type === item.type);
-            if (!existing) {
-              return [...prev, { type: item.type, name: item.name }];
-            }
-            return prev;
-          });
-          game.score += 100;
-          setScore(game.score);
-          addPointsAnimation('+100', item.x, item.y, '#22c55e');
-          return false;
+        // Check if it's a unique constraint violation
+        if (error.code === '23505' && error.message.includes('unique_nickname')) {
+          const suggestion = generateGreenSuggestion(nickname.trim());
+          setSuggestedNickname(suggestion);
+          setNicknameError(`This nickname is already taken! How about "${suggestion}"?`);
         } else {
-          game.hits += 1;
-          game.score = Math.max(0, game.score - 100);
-          setScore(game.score);
-          setHits(game.hits);
-          addPointsAnimation('-100', item.x, item.y, '#ef4444');
-          
-          if (game.hits >= 3) {
-            game.gameRunning = false;
-            setGameState('gameOver');
-          }
-          return false;
+          setNicknameError('Failed to submit score. Please try again.');
         }
+      } else {
+        console.log('Score submitted successfully!');
+        onGameComplete();
       }
-
-      if (item.x < -item.width) {
-        if (!item.isCollectible) {
-          setAvoidedChallenges(prev => {
-            const existing = prev.find(avoided => avoided.type === item.type);
-            if (!existing) {
-              return [...prev, { type: item.type, name: item.name }];
-            }
-            return prev;
-          });
-        }
-        return false;
-      }
-
-      return true;
-    });
-
-    if (game.gameRunning) {
-      gameLoopRef.current = requestAnimationFrame(gameLoop);
+    } catch (err) {
+      console.error('Error submitting score:', err);
+      setNicknameError('Failed to submit score. Please try again.');
+    } finally {
+      setIsSubmittingScore(false);
     }
-  }, [addPointsAnimation, checkItemOverlap, loadedImages]);
+  };
+
+  const useSuggestedNickname = () => {
+    if (suggestedNickname) {
+      setNickname(suggestedNickname);
+      setSuggestedNickname(null);
+      setNicknameError(null);
+    }
+  };
 
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        if (gameState === 'playing') {
-          jump();
-        } else if (gameState === 'waiting') {
-          startGame();
-        }
-      }
-    };
-
-    const handleClick = () => {
-      if (gameState === 'playing') {
-        jump();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyPress);
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.addEventListener('click', handleClick);
+    if (currentGame > 1) {
+      startGame();
     }
+  }, [currentGame]);
 
-    return () => {
-      document.removeEventListener('keydown', handleKeyPress);
-      if (canvas) {
-        canvas.removeEventListener('click', handleClick);
-      }
-    };
-  }, [gameState, jump, startGame]);
-
-  useEffect(() => {
-    if (gameState === 'playing') {
-      gameLoopRef.current = requestAnimationFrame(gameLoop);
-    }
-
-    return () => {
-      if (gameLoopRef.current) {
-        cancelAnimationFrame(gameLoopRef.current);
-      }
-    };
-  }, [gameState, gameLoop]);
-
-  const handleRestart = async () => {
-    if (gamesPlayed < 2) {
-      setGameScores(prev => [...prev, score]);
-      setGamesPlayed(prev => prev + 1);
-      resetGame();
-    } else {
-      setGameScores(prev => [...prev, score]);
-      setGamesPlayed(3);
-      await saveToSupabase();
-      onGameComplete();
-    }
-  };
-
-  const handleViewScoreboard = () => {
-    setShowScoreboard(true);
-  };
-
-  const handleBackToGame = () => {
-    setShowScoreboard(false);
-  };
-
-  // Nickname input screen
-  if (gameState === 'nickname') {
+  if (gameComplete) {
+    const highestScore = Math.max(...scores);
+    
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
-        <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-md mx-auto">
-          <CardContent className="p-8 text-center space-y-6">
-            <div className="text-4xl mb-4">🏆</div>
-            <h2 className="text-2xl font-bold text-gray-800">{t.title}</h2>
-            <p className="text-gray-600">{t.nicknamePrompt}</p>
-            
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <User className="h-5 w-5 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder={t.nicknamePlaceholder}
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleNicknameSubmit()}
-                  className="flex-1"
-                  maxLength={20}
-                />
+      <div className="min-h-screen bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 flex items-center justify-center p-4">
+        <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="text-6xl mb-4">🏆</div>
+            <CardTitle className="text-2xl font-bold text-gray-800">
+              {t.gameComplete}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="text-center space-y-4">
+              <div className="bg-green-100 p-4 rounded-xl">
+                <p className="text-lg font-semibold text-green-800">{t.yourScores}:</p>
+                <div className="space-y-2 mt-2">
+                  {scores.map((score, index) => (
+                    <div key={index} className="flex justify-between items-center">
+                      <span>{t.game} {index + 1}:</span>
+                      <span className="font-bold text-green-600">{score}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
               
-              <Button 
-                onClick={handleNicknameSubmit}
-                disabled={!nickname.trim()}
-                className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold"
+              <div className="bg-yellow-100 p-4 rounded-xl">
+                <p className="text-lg font-semibold text-yellow-800">
+                  {t.highestScore}: <span className="text-2xl font-bold text-yellow-600">{highestScore}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t.enterNickname}:
+                </label>
+                <Input
+                  type="text"
+                  value={nickname}
+                  onChange={(e) => {
+                    setNickname(e.target.value);
+                    setNicknameError(null);
+                    setSuggestedNickname(null);
+                  }}
+                  placeholder={t.nickname}
+                  className="w-full"
+                  maxLength={50}
+                />
+                {nicknameError && (
+                  <div className="mt-2 space-y-2">
+                    <p className="text-sm text-red-600">{nicknameError}</p>
+                    {suggestedNickname && (
+                      <Button
+                        onClick={useSuggestedNickname}
+                        variant="outline"
+                        size="sm"
+                        className="text-green-600 border-green-300 hover:bg-green-50"
+                      >
+                        Use "{suggestedNickname}"
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <Button
+                onClick={submitScore}
+                disabled={!nickname.trim() || isSubmittingScore}
+                className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3"
               >
-                <Trophy className="mr-2 h-4 w-4" />
-                {t.joinScoreboard}
+                {isSubmittingScore ? t.submitting : t.submitScore}
               </Button>
             </div>
-            
-            <Button 
+
+            <Button
               onClick={onBack}
               variant="outline"
               className="w-full"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {t.back}
+              {t.backToMenu}
             </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Scoreboard screen
-  if (showScoreboard) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
-        <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-2xl mx-auto">
-          <CardContent className="p-8">
-            <div className="text-center mb-6">
-              <div className="text-4xl mb-4">🏆</div>
-              <h2 className="text-2xl font-bold text-gray-800">{t.globalScoreboard}</h2>
-              {userRank > 0 && (
-                <p className="text-lg text-green-600 font-semibold mt-2">
-                  {t.yourRank}: #{userRank}
-                </p>
-              )}
-            </div>
-            
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {globalScores.slice(0, 10).map((entry, index) => (
-                <div 
-                  key={`${entry.nickname}-${entry.timestamp}`}
-                  className={`flex items-center justify-between p-3 rounded-lg ${
-                    entry.nickname === nickname ? 'bg-green-100 border-2 border-green-400' : 'bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="font-bold text-lg w-8">
-                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
-                    </span>
-                    <span className="font-medium">{entry.nickname}</span>
-                  </div>
-                  <span className="font-bold text-green-600">{entry.score}</span>
-                </div>
-              ))}
-              
-              {globalScores.length === 0 && (
-                <div className="text-center text-gray-500 py-8">
-                  No scores yet. Be the first to play!
-                </div>
-              )}
-            </div>
-            
-            <div className="text-center mt-6 space-y-3">
-              <div className="bg-blue-50 p-4 rounded-lg space-y-2">
-                <p className="text-sm text-gray-600">
-                  {t.finalScore}: {calculateFinalScore()}
-                </p>
-                <p className="text-sm text-blue-600 font-semibold">
-                  {t.highestGameScore}: {getHighestGameScore()}
-                </p>
-              </div>
-              <Button 
-                onClick={handleBackToGame}
-                className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold"
-              >
-                {t.backToGame}
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -668,166 +417,56 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
-      <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-6xl mx-auto relative">
-        <CardContent className="p-8">
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">{t.title}</h1>
-            <p className="text-gray-600 mb-2">{t.instructions}</p>
-            <p className="text-sm text-blue-600 font-semibold mb-4">{t.spaceInstructions}</p>
-            <p className="text-sm text-purple-600 font-medium">Playing as: {nickname}</p>
-          </div>
-
-          {inventory.length > 0 && (
-            <div className="mb-4 p-4 bg-green-100 rounded-lg">
-              <h3 className="font-bold text-green-800 mb-2">{t.inventory}</h3>
-              <div className="flex flex-wrap gap-2">
-                {inventory.map((item, index) => (
-                  <span key={index} className="bg-white px-3 py-1 rounded-full text-sm border flex items-center gap-2">
-                    {loadedImages[item.type] && (
-                      <img src={item.type} alt={item.name} className="w-6 h-6" />
-                    )}
-                    {item.name}
-                  </span>
-                ))}
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 flex items-center justify-center p-4">
+      <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-2xl w-full">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-gray-800">
+            {t.title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            onClick={handleCanvasClick}
+            className="bg-gray-100 rounded-md shadow-md cursor-pointer"
+          />
+          {!gameRunning && !gameOver && (
+            <div className="text-center text-gray-600">
+              {t.pressSpace}
             </div>
           )}
-
-          {avoidedChallenges.length > 0 && (
-            <div className="mb-4 p-4 bg-blue-100 rounded-lg">
-              <h3 className="font-bold text-blue-800 mb-2">{t.avoidedChallenges}</h3>
-              <div className="flex flex-wrap gap-2">
-                {avoidedChallenges.map((item, index) => (
-                  <span key={index} className="bg-white px-3 py-1 rounded-full text-sm border flex items-center gap-2">
-                    {loadedImages[item.type] && (
-                      <img src={item.type} alt={item.name} className="w-6 h-6" />
-                    )}
-                    {item.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-center mb-6 relative">
-            <canvas
-              ref={canvasRef}
-              width={1200}
-              height={250}
-              className="border-2 border-gray-300 rounded-lg bg-gradient-to-b from-blue-200 to-green-200"
-              style={{ maxWidth: '100%', height: 'auto' }}
-            />
-            
-            <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg z-10">
-              <div className="text-xs space-y-1 text-gray-700 font-medium">
-                <div>{t.score}: {score}</div>
-                <div>{t.hits}: {hits}/3</div>
-                <div>{t.gamesLeft}: {3 - gamesPlayed}</div>
-              </div>
-            </div>
-            
-            <div className="absolute inset-0 pointer-events-none">
-              {pointsAnimations.map((anim) => (
-                <div
-                  key={anim.id}
-                  className="absolute text-lg font-bold animate-bounce"
-                  style={{
-                    left: `${(anim.x / 1200) * 100}%`,
-                    top: `${(anim.y / 250) * 100}%`,
-                    color: anim.color,
-                    animation: 'bounce 1.5s ease-out forwards'
-                  }}
-                >
-                  {anim.points}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="text-center space-y-4">
-            {gameState === 'waiting' && (
-              <Button 
-                onClick={startGame}
-                className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold px-8 py-3 text-lg"
-              >
-                {t.start}
-              </Button>
-            )}
-
-            {gameState === 'playing' && (
-              <div className="space-y-3">
-                <Button 
-                  onClick={restartCurrentGame}
-                  variant="outline"
-                  className="mx-2"
-                >
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  {t.restart}
+          {gameOver && (
+            <div className="text-center space-y-4">
+              <div className="text-2xl font-bold text-red-600">{t.gameOver}</div>
+              {currentGame < 3 ? (
+                <Button onClick={handleNextGame} className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3">
+                  {t.nextGame}
                 </Button>
-                
-                <Button 
-                  onClick={handleViewScoreboard}
-                  variant="outline"
-                  className="mx-2"
-                >
-                  <Trophy className="mr-2 h-4 w-4" />
-                  {t.viewScoreboard}
-                </Button>
-              </div>
-            )}
-
-            {gameState === 'gameOver' && (
-              <div className="space-y-3">
-                <p className="text-xl font-bold text-red-600">{t.gameOver}</p>
-                <p className="text-gray-600">{t.score}: {score}</p>
-                <p className="text-gray-600">{t.hits}: {hits}/3</p>
-                <div className="flex justify-center gap-2 flex-wrap">
-                  {gamesPlayed < 2 ? (
-                    <Button 
-                      onClick={handleRestart}
-                      disabled={isSubmitting}
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold px-8 py-3"
-                    >
-                      <RotateCcw className="mr-2 h-4 w-4" />
-                      {t.tryAgain} ({2 - gamesPlayed} {t.gamesLeft})
-                    </Button>
-                  ) : (
-                    <Button 
-                      onClick={handleRestart}
-                      disabled={isSubmitting}
-                      className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold px-8 py-3"
-                    >
-                      {isSubmitting ? t.submittingScore : `${t.completed} & ${t.continue}`}
-                    </Button>
-                  )}
-                  <Button 
-                    onClick={restartCurrentGame}
-                    variant="outline"
-                  >
+              ) : (
+                <>
+                  <div className="bg-yellow-100 p-4 rounded-xl">
+                    <p className="text-lg font-semibold text-yellow-800">
+                      {t.finalScore}: <span className="text-2xl font-bold text-yellow-600">{score}</span>
+                    </p>
+                  </div>
+                  <Button onClick={handleRestart} className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3">
                     <RotateCcw className="mr-2 h-4 w-4" />
                     {t.restart}
                   </Button>
-                  <Button 
-                    onClick={handleViewScoreboard}
-                    variant="outline"
-                  >
-                    <Trophy className="mr-2 h-4 w-4" />
-                    {t.viewScoreboard}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            <Button 
-              onClick={onBack}
-              variant="outline"
-              className="ml-4"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t.back}
-            </Button>
-          </div>
+                </>
+              )}
+            </div>
+          )}
+          <Button
+            onClick={onBack}
+            variant="outline"
+            className="w-full"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            {t.backToMenu}
+          </Button>
         </CardContent>
       </Card>
     </div>

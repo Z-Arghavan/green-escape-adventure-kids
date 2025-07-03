@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trophy, RefreshCw, X } from 'lucide-react';
+import { Trophy, RefreshCw, X, Calendar, Hash } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Table,
@@ -19,6 +19,7 @@ interface LeaderboardEntry {
   highest_score: number;
   games_played: number;
   created_at: string;
+  display_id: number;
 }
 
 interface GlobalLeaderboardProps {
@@ -35,9 +36,11 @@ const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({ selectedLanguage,
     en: {
       title: "Global Leaderboard",
       rank: "Rank",
+      id: "ID",
       player: "Player",
       score: "Score",
-      gamesPlayed: "Games Played",
+      gamesPlayed: "Games",
+      date: "Date",
       refresh: "Refresh",
       close: "Close",
       loading: "Loading scores...",
@@ -48,9 +51,11 @@ const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({ selectedLanguage,
     nl: {
       title: "Wereldwijd Scorebord",
       rank: "Positie",
+      id: "ID",
       player: "Speler",
       score: "Score",
-      gamesPlayed: "Spellen Gespeeld",
+      gamesPlayed: "Spellen",
+      date: "Datum",
       refresh: "Vernieuwen",
       close: "Sluiten",
       loading: "Scores laden...",
@@ -71,7 +76,7 @@ const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({ selectedLanguage,
         .from('leaderboard')
         .select('*')
         .order('highest_score', { ascending: false })
-        .limit(50);
+        .limit(100);
 
       if (supabaseError) {
         console.error('Error loading scores:', supabaseError);
@@ -101,9 +106,20 @@ const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({ selectedLanguage,
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(selectedLanguage === 'en' ? 'en-US' : 'nl-NL', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-6xl w-full max-h-[90vh] overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div className="flex items-center space-x-2">
             <Trophy className="h-6 w-6 text-yellow-600" />
@@ -157,38 +173,66 @@ const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({ selectedLanguage,
           )}
 
           {!loading && !error && scores.length > 0 && (
-            <div className="overflow-y-auto max-h-96">
+            <div className="overflow-y-auto max-h-[60vh]">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-20">{t.rank}</TableHead>
-                    <TableHead>{t.player}</TableHead>
-                    <TableHead className="text-right">{t.score}</TableHead>
-                    <TableHead className="text-right">{t.gamesPlayed}</TableHead>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-16 font-bold">{t.rank}</TableHead>
+                    <TableHead className="w-20 font-bold">
+                      <div className="flex items-center">
+                        <Hash className="h-4 w-4 mr-1" />
+                        {t.id}
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-bold">{t.player}</TableHead>
+                    <TableHead className="text-right font-bold">{t.score}</TableHead>
+                    <TableHead className="text-center font-bold">{t.gamesPlayed}</TableHead>
+                    <TableHead className="text-right font-bold">
+                      <div className="flex items-center justify-end">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        {t.date}
+                      </div>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {scores.map((entry, index) => (
                     <TableRow 
                       key={entry.id}
-                      className={index < 3 ? 'bg-gradient-to-r from-yellow-50 to-orange-50' : ''}
+                      className={`${
+                        index < 3 
+                          ? 'bg-gradient-to-r from-yellow-50 to-orange-50 hover:from-yellow-100 hover:to-orange-100' 
+                          : 'hover:bg-gray-50'
+                      } transition-colors`}
                     >
                       <TableCell className="font-bold text-lg">
                         {getRankEmoji(index)}
                       </TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-mono text-sm text-gray-500">
+                        #{entry.display_id}
+                      </TableCell>
+                      <TableCell className="font-medium text-gray-900">
                         {entry.nickname}
                       </TableCell>
-                      <TableCell className="text-right font-bold text-green-600">
-                        {entry.highest_score}
+                      <TableCell className="text-right font-bold text-green-600 text-lg">
+                        {entry.highest_score.toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right text-gray-600">
+                      <TableCell className="text-center text-gray-600">
                         {entry.games_played}
+                      </TableCell>
+                      <TableCell className="text-right text-sm text-gray-500">
+                        {formatDate(entry.created_at)}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+
+          {!loading && !error && scores.length > 0 && (
+            <div className="mt-4 text-center text-sm text-gray-500">
+              Showing {scores.length} players • Updated in real-time
             </div>
           )}
         </CardContent>
