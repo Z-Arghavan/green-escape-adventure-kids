@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Globe, ArrowRight } from 'lucide-react';
+import { Globe, ArrowRight, Trophy } from 'lucide-react';
 import DinoGame from '@/components/DinoGame';
+import GlobalLeaderboard from '@/components/GlobalLeaderboard';
 
 type Language = 'en' | 'nl';
 
@@ -11,7 +12,7 @@ const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
   const [showDescription, setShowDescription] = useState(false);
   const [showGame, setShowGame] = useState(false);
-  const [gameCode, setGameCode] = useState<string | null>(null);
+  const [showGlobalLeaderboard, setShowGlobalLeaderboard] = useState(false);
 
   const translations = {
     en: {
@@ -26,7 +27,8 @@ const Index = () => {
       instruction3: "💨 Avoid environmental challenges and pollution",
       instruction4: "🎯 Play 3 games to get your final score",
       backToStart: "Back to Start",
-      startGame: "Start Game"
+      startGame: "Start Game",
+      viewLeaderboard: "View Global Leaderboard"
     },
     nl: {
       title: "Het Groene Dino Spel",
@@ -40,7 +42,8 @@ const Index = () => {
       instruction3: "💨 Vermijd milieu-uitdagingen en vervuiling",
       instruction4: "🎯 Speel 3 spellen om je eindscore te krijgen",
       backToStart: "Terug naar Start",
-      startGame: "Start Spel"
+      startGame: "Start Spel",
+      viewLeaderboard: "Bekijk Wereldwijd Scorebord"
     }
   };
 
@@ -56,20 +59,27 @@ const Index = () => {
     setShowDescription(false);
     setSelectedLanguage(null);
     setShowGame(false);
-    setGameCode(null);
+    setShowGlobalLeaderboard(false);
   };
 
   const handleStartGame = () => {
     setShowGame(true);
   };
 
-  const handleGameComplete = (code: string) => {
-    setGameCode(code);
+  const handleGameComplete = () => {
     setShowGame(false);
   };
 
   const handleBackFromGame = () => {
     setShowGame(false);
+  };
+
+  const handleViewGlobalLeaderboard = () => {
+    setShowGlobalLeaderboard(true);
+  };
+
+  const handleCloseGlobalLeaderboard = () => {
+    setShowGlobalLeaderboard(false);
   };
 
   if (showGame && selectedLanguage) {
@@ -107,6 +117,15 @@ const Index = () => {
                   START THE GAME
                 </Button>
                 
+                <Button 
+                  onClick={handleViewGlobalLeaderboard}
+                  variant="outline"
+                  className="w-full h-16 text-xl font-bold hover:bg-yellow-50 border-2 hover:border-yellow-300"
+                >
+                  <Trophy className="mr-3 h-6 w-6" />
+                  VIEW GLOBAL LEADERBOARD
+                </Button>
+                
                 <div className="text-center">
                   <p className="text-gray-600 mb-4 font-medium">Choose your language:</p>
                   <div className="flex gap-4 justify-center">
@@ -132,6 +151,13 @@ const Index = () => {
             </Card>
           </div>
         </div>
+        
+        {showGlobalLeaderboard && (
+          <GlobalLeaderboard 
+            selectedLanguage={selectedLanguage || 'en'}
+            onClose={handleCloseGlobalLeaderboard}
+          />
+        )}
       </div>
     );
   }
@@ -187,11 +213,6 @@ const Index = () => {
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
                   {t.title}
                 </h1>
-                {gameCode && (
-                  <div className="bg-green-100 p-4 rounded-lg border-2 border-green-400 mb-4">
-                    <p className="text-green-800 font-bold">Game completed! Code: {gameCode}</p>
-                  </div>
-                )}
               </div>
 
               <div className="space-y-6 text-lg leading-relaxed">
@@ -226,18 +247,29 @@ const Index = () => {
               </div>
 
               <div className="text-center mt-8 space-y-4">
-                <Button
-                  onClick={handleStartGame}
-                  className="px-8 py-4 text-lg font-bold bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white shadow-lg transform hover:scale-105 transition-all duration-200"
-                >
-                  <ArrowRight className="mr-3 h-5 w-5" />
-                  {t.startGame}
-                </Button>
+                <div className="flex gap-4 justify-center">
+                  <Button
+                    onClick={handleStartGame}
+                    className="px-8 py-4 text-lg font-bold bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white shadow-lg transform hover:scale-105 transition-all duration-200"
+                  >
+                    <ArrowRight className="mr-3 h-5 w-5" />
+                    {t.startGame}
+                  </Button>
+                  
+                  <Button
+                    onClick={handleViewGlobalLeaderboard}
+                    variant="outline"
+                    className="px-8 py-4 text-lg font-bold hover:bg-yellow-50 border-2 hover:border-yellow-300"
+                  >
+                    <Trophy className="mr-3 h-5 w-5" />
+                    {t.viewLeaderboard}
+                  </Button>
+                </div>
                 
                 <Button
                   onClick={handleBackToStart}
                   variant="outline"
-                  className="px-8 py-3 text-lg font-medium hover:bg-gray-50 ml-4"
+                  className="px-8 py-3 text-lg font-medium hover:bg-gray-50"
                 >
                   {t.backToStart}
                 </Button>
@@ -246,6 +278,13 @@ const Index = () => {
           </Card>
         </div>
       </div>
+      
+      {showGlobalLeaderboard && (
+        <GlobalLeaderboard 
+          selectedLanguage={selectedLanguage}
+          onClose={handleCloseGlobalLeaderboard}
+        />
+      )}
     </div>
   );
 };

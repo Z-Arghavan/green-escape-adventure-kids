@@ -3,9 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, RotateCcw, Trophy, User } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DinoGameProps {
-  onGameComplete: (code: string) => void;
+  onGameComplete: () => void;
   onBack: () => void;
   selectedLanguage: 'en' | 'nl';
 }
@@ -24,8 +25,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const [score, setScore] = useState(0);
   const [hits, setHits] = useState(0);
   const [gamesPlayed, setGamesPlayed] = useState(0);
-  const [gameScores, setGameScores] = useState<number[]>([]); // Track individual game scores
-  const [showCode, setShowCode] = useState(false);
+  const [gameScores, setGameScores] = useState<number[]>([]);
   const [showScoreboard, setShowScoreboard] = useState(false);
   const [globalScores, setGlobalScores] = useState<ScoreEntry[]>([]);
   const [userRank, setUserRank] = useState<number>(0);
@@ -33,6 +33,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const [avoidedChallenges, setAvoidedChallenges] = useState<Array<{type: string, name: string}>>([]);
   const [pointsAnimations, setPointsAnimations] = useState<Array<{id: number, points: string, x: number, y: number, color: string}>>([]);
   const [loadedImages, setLoadedImages] = useState<{[key: string]: HTMLImageElement}>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const translations = {
     en: {
@@ -50,8 +51,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       hits: "Hits",
       gamesLeft: "Games left",
       completed: "Well done! You've completed all 3 games!",
-      yourCode: "Your code is:",
-      useThisCode: "Use this code for the next challenge!",
       back: "Back to Instructions",
       inventory: "Collected Items:",
       avoidedChallenges: "Avoided Environmental Challenges:",
@@ -59,11 +58,13 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       globalScoreboard: "Global Scoreboard",
       yourRank: "Your Rank",
       viewScoreboard: "View Global Scoreboard",
-      backToCode: "Back to Code",
+      backToGame: "Back to Game",
       rank: "Rank",
       player: "Player",
       finalScore: "Final Score",
-      highestGameScore: "Highest Game Score"
+      highestGameScore: "Highest Game Score",
+      continue: "Continue",
+      submittingScore: "Submitting score..."
     },
     nl: {
       title: "Duurzame Dino Spel",
@@ -80,8 +81,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       hits: "Treffers",
       gamesLeft: "Spellen over",
       completed: "Goed gedaan! Je hebt alle 3 spellen voltooid!",
-      yourCode: "Je code is:",
-      useThisCode: "Gebruik deze code voor de volgende uitdaging!",
       back: "Terug naar Instructies",
       inventory: "Verzamelde Items:",
       avoidedChallenges: "Vermeden Milieu Uitdagingen:",
@@ -89,11 +88,13 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       globalScoreboard: "Wereldwijd Scorebord",
       yourRank: "Je Positie",
       viewScoreboard: "Bekijk Wereldwijd Scorebord",
-      backToCode: "Terug naar Code",
+      backToGame: "Terug naar Spel",
       rank: "Positie",
       player: "Speler",
       finalScore: "EindScore",
-      highestGameScore: "Hoogste Spel Score"
+      highestGameScore: "Hoogste Spel Score",
+      continue: "Doorgaan",
+      submittingScore: "Score indienen..."
     }
   };
 
@@ -111,12 +112,9 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     lastSpawnTime: 0
   });
 
-  // Updated collectible types with all positive environmental icons
   const collectibleTypes = [
-    // Updated collectibles with new names
     { type: '/lovable-uploads/5d2bd614-4b17-4d01-9a71-ccb46a3c48bf.png', name: 'Climate Solutions', isCollectible: true },
     { type: '/lovable-uploads/661772a0-df0b-44c6-835d-e70dea731378.png', name: 'Re-forestation', isCollectible: true },
-    // New positive icons with updated names
     { type: '/lovable-uploads/fdf1020c-e08d-4792-861b-25357994cacb.png', name: 'Recycling', isCollectible: true },
     { type: '/lovable-uploads/9ebe3ed1-146a-48a1-b10f-ae05e19fc0d2.png', name: 'Recycling Facility', isCollectible: true },
     { type: '/lovable-uploads/721167ab-50cc-4d95-8bfe-77c33abc2d15.png', name: 'Waste Sorting', isCollectible: true },
@@ -126,20 +124,17 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     { type: '/lovable-uploads/250e79f0-7be1-4fba-90d9-161a0ad7c425.png', name: 'Forest Trees', isCollectible: true },
     { type: '/lovable-uploads/7d3d43b4-a80f-4c33-9ebe-56170096dfb5.png', name: 'Mother Earth', isCollectible: true },
     { type: '/lovable-uploads/18cd6e74-a8dd-4977-a2bf-c0b3bb7a92d7.png', name: 'Plastic Recycling', isCollectible: true },
-    // Two new positive icons with updated names
     { type: '/lovable-uploads/45a325a8-4bef-4345-8822-16c4b8d0572d.png', name: 'Solar Panels', isCollectible: true },
     { type: '/lovable-uploads/b399f0b5-4a11-468a-ba96-7938eaf442b9.png', name: 'Green Innovation', isCollectible: true }
   ];
 
   const obstacleTypes = [
-    // Updated obstacles with new names
     { type: '/lovable-uploads/e74137ed-ec1b-40fa-90da-b45911ca4bb1.png', name: 'Natural Hazards', isCollectible: false },
     { type: '/lovable-uploads/56cf7f85-b5d9-49b0-9a71-70cc5c28a059.png', name: 'Acid Rain', isCollectible: false },
     { type: '/lovable-uploads/fbd8c804-0bf1-4502-a2e6-05bddbb62f3e.png', name: 'Ozone Depletion', isCollectible: false },
     { type: '/lovable-uploads/0b899ce6-89d1-4540-9e32-086490877bc9.png', name: 'Industrial Pollution', isCollectible: false },
     { type: '/lovable-uploads/04a038af-ac30-41dc-8b7e-7da7201ab4a1.png', name: 'Rising Average Temperature', isCollectible: false },
     { type: '/lovable-uploads/8489cb68-0478-4883-bb7d-4fbaac95936d.png', name: 'Melting Ice', isCollectible: false },
-    // New negative obstacles with updated names
     { type: '/lovable-uploads/2adcbd84-6a6e-4d91-ba66-6ee1629cab8c.png', name: 'Building Demolition', isCollectible: false },
     { type: '/lovable-uploads/f850b845-c7ef-41c1-b3ba-f843d237eb75.png', name: 'Water Pollution', isCollectible: false },
     { type: '/lovable-uploads/e9f971d5-39d5-4c15-812c-5318d41f156e.png', name: 'Landfill Waste', isCollectible: false },
@@ -150,19 +145,41 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     { type: '/lovable-uploads/80707763-0cfa-43ec-b601-65d3402a36b8.png', name: 'Global Warming', isCollectible: false }
   ];
 
-  // Load global scores from localStorage
-  useEffect(() => {
-    const savedScores = localStorage.getItem('dinoGameScores');
-    if (savedScores) {
-      setGlobalScores(JSON.parse(savedScores));
+  // Load global scores from Supabase
+  const loadGlobalScores = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('leaderboard')
+        .select('*')
+        .order('highest_score', { ascending: false })
+        .limit(100);
+
+      if (error) {
+        console.error('Error loading global scores:', error);
+        return;
+      }
+
+      const scores = data.map(entry => ({
+        nickname: entry.nickname,
+        score: entry.highest_score,
+        timestamp: new Date(entry.created_at).getTime()
+      }));
+
+      setGlobalScores(scores);
+    } catch (error) {
+      console.error('Error loading global scores:', error);
     }
   }, []);
+
+  useEffect(() => {
+    loadGlobalScores();
+  }, [loadGlobalScores]);
 
   // Calculate final score
   const calculateFinalScore = useCallback(() => {
     const inventoryScore = inventory.length * 100;
     const avoidedScore = avoidedChallenges.length * 50;
-    const completionBonus = 200; // For completing all 3 games
+    const completionBonus = 200;
     return inventoryScore + avoidedScore + completionBonus;
   }, [inventory, avoidedChallenges]);
 
@@ -171,28 +188,44 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     return gameScores.length > 0 ? Math.max(...gameScores) : 0;
   }, [gameScores]);
 
-  // Save score to global scoreboard
-  const saveToScoreboard = useCallback(() => {
-    const finalScore = calculateFinalScore();
-    const newEntry: ScoreEntry = {
-      nickname,
-      score: finalScore,
-      timestamp: Date.now()
-    };
+  // Save score to Supabase
+  const saveToSupabase = useCallback(async () => {
+    if (!nickname.trim()) return;
 
-    const updatedScores = [...globalScores, newEntry]
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 100); // Keep top 100 scores
+    setIsSubmitting(true);
+    try {
+      const finalScore = calculateFinalScore();
+      const highestGameScore = getHighestGameScore();
+      const scoreToSave = Math.max(finalScore, highestGameScore);
 
-    setGlobalScores(updatedScores);
-    localStorage.setItem('dinoGameScores', JSON.stringify(updatedScores));
+      const { error } = await supabase
+        .from('leaderboard')
+        .insert({
+          nickname: nickname.trim(),
+          highest_score: scoreToSave,
+          games_played: 3
+        });
 
-    // Find user's rank
-    const rank = updatedScores.findIndex(entry => 
-      entry.nickname === nickname && entry.timestamp === newEntry.timestamp
-    ) + 1;
-    setUserRank(rank);
-  }, [nickname, globalScores, calculateFinalScore]);
+      if (error) {
+        console.error('Error saving score:', error);
+        return;
+      }
+
+      // Reload global scores to get updated leaderboard
+      await loadGlobalScores();
+
+      // Find user's rank
+      const rank = globalScores.findIndex(entry => 
+        entry.nickname === nickname && entry.score === scoreToSave
+      ) + 1;
+      setUserRank(rank);
+
+    } catch (error) {
+      console.error('Error saving score:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [nickname, calculateFinalScore, getHighestGameScore, loadGlobalScores, globalScores]);
 
   const handleNicknameSubmit = () => {
     if (nickname.trim()) {
@@ -200,7 +233,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     }
   };
 
-  // Load images
   useEffect(() => {
     const loadImages = async () => {
       const allItems = [...collectibleTypes, ...obstacleTypes];
@@ -297,7 +329,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     }
   }, []);
 
-  // Game loop function
   const gameLoop = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -311,10 +342,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
     const currentTime = Date.now();
 
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Update and draw clouds with proper spacing
     game.clouds.forEach((cloud, index) => {
       cloud.x -= cloud.speed;
       if (cloud.x < -cloud.size) {
@@ -325,17 +354,14 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
         }
       }
       
-      // Draw cloud
       ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
       ctx.font = `${cloud.size}px Arial`;
       ctx.fillText('☁️', cloud.x, cloud.y);
     });
 
-    // Update dino physics
     game.dino.velocityY += 0.8;
     game.dino.y += game.dino.velocityY;
 
-    // Ground collision
     if (game.dino.y >= 200) {
       game.dino.y = 200;
       game.dino.velocityY = 0;
@@ -343,25 +369,22 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       game.dino.jumpCount = 0;
     }
 
-    // Draw ground
     ctx.fillStyle = '#8B5CF6';
     ctx.fillRect(0, 235, canvas.width, 15);
 
-    // Draw dino using T-Rex emoji - made bigger
     ctx.save();
-    ctx.font = '55px Arial'; // Increased from 50px to 55px for even bigger dino
+    ctx.font = '55px Arial';
     ctx.scale(-1, 1);
-    ctx.fillText('🦖', -game.dino.x - 55, game.dino.y + 40); // Adjusted positioning for bigger size
+    ctx.fillText('🦖', -game.dino.x - 55, game.dino.y + 40);
     ctx.restore();
 
-    // Spawn items with proper spacing and timing - now with even bigger icons
     if (currentTime - game.lastSpawnTime > 1000 && Math.random() < 0.02) {
       const allItems = [...collectibleTypes, ...obstacleTypes];
       const itemType = allItems[Math.floor(Math.random() * allItems.length)];
       const newX = canvas.width;
-      const newY = itemType.isCollectible ? 175 : 180; // Adjusted for bigger icons
-      const newWidth = 70; // Increased from 50 to 70
-      const newHeight = 70; // Increased from 50 to 70
+      const newY = itemType.isCollectible ? 175 : 180;
+      const newWidth = 70;
+      const newHeight = 70;
       
       if (!checkItemOverlap(newX, newY, newWidth, newHeight)) {
         game.collectibles.push({
@@ -377,20 +400,16 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       }
     }
 
-    // Update and draw items using images
     game.collectibles = game.collectibles.filter(item => {
       item.x -= game.gameSpeed;
 
-      // Draw item using loaded image
       const img = loadedImages[item.type];
       if (img) {
         ctx.drawImage(img, item.x, item.y, item.width, item.height);
       } else {
-        // Enhanced fallback with better visual indicators
         ctx.fillStyle = item.isCollectible ? '#22c55e' : '#ef4444';
         ctx.fillRect(item.x, item.y, item.width, item.height);
         
-        // Add emoji fallback
         ctx.fillStyle = 'white';
         ctx.font = '30px Arial';
         ctx.textAlign = 'center';
@@ -404,7 +423,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
         console.log('Image not loaded for:', item.type, 'Using fallback display');
       }
 
-      // Collision detection with adjusted hitboxes for bigger icons
       const dinoHitbox = {
         x: game.dino.x + 8,
         y: game.dino.y + 8,
@@ -452,7 +470,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
         }
       }
 
-      // Check if obstacle was successfully avoided (went off screen without collision)
       if (item.x < -item.width) {
         if (!item.isCollectible) {
           setAvoidedChallenges(prev => {
@@ -474,7 +491,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     }
   }, [addPointsAnimation, checkItemOverlap, loadedImages]);
 
-  // Key handling and game loop
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
@@ -519,30 +535,24 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     };
   }, [gameState, gameLoop]);
 
-  const handleRestart = () => {
+  const handleRestart = async () => {
     if (gamesPlayed < 2) {
-      // Save the current game score before resetting
       setGameScores(prev => [...prev, score]);
       setGamesPlayed(prev => prev + 1);
       resetGame();
     } else {
-      // Save the final game score
       setGameScores(prev => [...prev, score]);
       setGamesPlayed(3);
-      saveToScoreboard();
-      setShowCode(true);
+      await saveToSupabase();
+      onGameComplete();
     }
-  };
-
-  const handleComplete = () => {
-    onGameComplete('154');
   };
 
   const handleViewScoreboard = () => {
     setShowScoreboard(true);
   };
 
-  const handleBackToCode = () => {
+  const handleBackToGame = () => {
     setShowScoreboard(false);
   };
 
@@ -615,9 +625,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
                 <div 
                   key={`${entry.nickname}-${entry.timestamp}`}
                   className={`flex items-center justify-between p-3 rounded-lg ${
-                    entry.nickname === nickname && entry.timestamp === globalScores.find(s => s.nickname === nickname)?.timestamp
-                      ? 'bg-green-100 border-2 border-green-400' 
-                      : 'bg-gray-50'
+                    entry.nickname === nickname ? 'bg-green-100 border-2 border-green-400' : 'bg-gray-50'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
@@ -647,72 +655,10 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
                 </p>
               </div>
               <Button 
-                onClick={handleBackToCode}
+                onClick={handleBackToGame}
                 className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold"
               >
-                {t.backToCode}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Code completion screen
-  if (showCode) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
-        <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-md mx-auto">
-          <CardContent className="p-8 text-center space-y-6">
-            <div className="text-4xl mb-4">🎉</div>
-            <h2 className="text-2xl font-bold text-green-600">{t.completed}</h2>
-            
-            <div className="bg-yellow-100 p-6 rounded-xl border-2 border-yellow-400">
-              <p className="text-lg font-semibold text-gray-800 mb-2">{t.yourCode}</p>
-              <div className="text-4xl font-bold text-green-600 font-mono">154</div>
-            </div>
-            
-            <p className="text-gray-600">{t.useThisCode}</p>
-            
-            <div className="bg-blue-100 p-4 rounded-lg space-y-2">
-              {userRank > 0 && (
-                <p className="text-blue-800 font-semibold">
-                  {t.yourRank}: #{userRank}
-                </p>
-              )}
-              <p className="text-sm text-blue-600">
-                {t.finalScore}: {calculateFinalScore()}
-              </p>
-              <p className="text-sm text-green-600 font-semibold">
-                {t.highestGameScore}: {getHighestGameScore()}
-              </p>
-            </div>
-            
-            <div className="space-y-3">
-              <Button 
-                onClick={handleViewScoreboard}
-                variant="outline"
-                className="w-full"
-              >
-                <Trophy className="mr-2 h-4 w-4" />
-                {t.viewScoreboard}
-              </Button>
-              
-              <Button 
-                onClick={handleComplete}
-                className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold"
-              >
-                Continue
-              </Button>
-              
-              <Button 
-                onClick={onBack}
-                variant="outline"
-                className="w-full"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {t.back}
+                {t.backToGame}
               </Button>
             </div>
           </CardContent>
@@ -810,14 +756,25 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
             )}
 
             {gameState === 'playing' && (
-              <Button 
-                onClick={restartCurrentGame}
-                variant="outline"
-                className="mx-2"
-              >
-                <RotateCcw className="mr-2 h-4 w-4" />
-                {t.restart}
-              </Button>
+              <div className="space-y-3">
+                <Button 
+                  onClick={restartCurrentGame}
+                  variant="outline"
+                  className="mx-2"
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  {t.restart}
+                </Button>
+                
+                <Button 
+                  onClick={handleViewScoreboard}
+                  variant="outline"
+                  className="mx-2"
+                >
+                  <Trophy className="mr-2 h-4 w-4" />
+                  {t.viewScoreboard}
+                </Button>
+              </div>
             )}
 
             {gameState === 'gameOver' && (
@@ -825,30 +782,40 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
                 <p className="text-xl font-bold text-red-600">{t.gameOver}</p>
                 <p className="text-gray-600">{t.score}: {score}</p>
                 <p className="text-gray-600">{t.hits}: {hits}/3</p>
-                {gamesPlayed < 2 ? (
+                <div className="flex justify-center gap-2 flex-wrap">
+                  {gamesPlayed < 2 ? (
+                    <Button 
+                      onClick={handleRestart}
+                      disabled={isSubmitting}
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold px-8 py-3"
+                    >
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      {t.tryAgain} ({2 - gamesPlayed} {t.gamesLeft})
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleRestart}
+                      disabled={isSubmitting}
+                      className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold px-8 py-3"
+                    >
+                      {isSubmitting ? t.submittingScore : `${t.completed} & ${t.continue}`}
+                    </Button>
+                  )}
                   <Button 
-                    onClick={handleRestart}
-                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold px-8 py-3"
+                    onClick={restartCurrentGame}
+                    variant="outline"
                   >
                     <RotateCcw className="mr-2 h-4 w-4" />
-                    {t.tryAgain} ({2 - gamesPlayed} {t.gamesLeft})
+                    {t.restart}
                   </Button>
-                ) : (
                   <Button 
-                    onClick={handleRestart}
-                    className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold px-8 py-3"
+                    onClick={handleViewScoreboard}
+                    variant="outline"
                   >
-                    Finish Game & Get Code
+                    <Trophy className="mr-2 h-4 w-4" />
+                    {t.viewScoreboard}
                   </Button>
-                )}
-                <Button 
-                  onClick={restartCurrentGame}
-                  variant="outline"
-                  className="ml-2"
-                >
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  {t.restart}
-                </Button>
+                </div>
               </div>
             )}
 
