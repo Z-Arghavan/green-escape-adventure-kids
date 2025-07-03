@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Globe, Key, Puzzle, Search, Users, Clock, Lightbulb, ArrowRight } from 'lucide-react';
+import { Globe, ArrowRight } from 'lucide-react';
 import DinoGame from '@/components/DinoGame';
 
 type Language = 'en' | 'nl';
@@ -14,60 +15,32 @@ const Index = () => {
 
   const translations = {
     en: {
-      title: "Green Escape: Return from the future",
-      startButton: "START THE ROOM",
+      title: "The Green Dino Game",
+      startButton: "START THE GAME",
       languagePrompt: "Choose your language:",
-      welcome: "🌍 Welcome to the Green Escape: Return from the future",
-      intro: "You've just entered the office of a brilliant researcher. He travelled to the future to find solutions for our planet's most pressing problems—climate change, pollution, waste, and more. But something went wrong...",
-      problem: "🚨 On his return, the researcher got trapped in his time machine!",
-      problemDesc: "Now it's up to you to help him.",
-      missionTitle: "Your mission:",
-      mission1: "🔑 Find all the keys hidden in this room.",
-      mission2: "🧩 Each key is unlocked by solving a mini-game—some are digital, some are physical.",
-      mission3: "🕵️‍♀️ Every game gives you a clue to the next challenge.",
-      mission4: "🔐 The final key will unlock the time machine and set the researcher free!",
-      howToPlayTitle: "🧭 How to Play",
-      howToPlay1: "Start anywhere you like. There's no single path, but you'll need to solve all challenges to find the final key.",
-      howToPlay2: "Look around carefully. There are clues hidden in objects, notes, screens, or even in plain sight.",
-      howToPlay3: "Work as a team! Children and parents should work together—two brains are better than one.",
-      miniGamesTitle: "Mini-Games Ahead:",
-      miniGames1: "Some games are on a tablet or computer",
-      miniGames2: "Others involve puzzles, hidden messages, or physical items",
-      afterSolvingTitle: "After solving each mini-game:",
-      afterSolving1: "You'll receive a piece of information or a number",
-      afterSolving2: "Keep track of these clues—they build up your path to the next key",
-      stuckTitle: "If you're stuck:",
-      stuck: "Ask a guide or look around again—sometimes clues are right where you started",
+      welcome: "🌍 Welcome to The Green Dino Game",
+      description: "Help our dinosaur friend collect positive environmental solutions while avoiding environmental challenges! Jump over pollution and hazards, but collect recycling, renewable energy, and other green solutions.",
+      howToPlay: "How to Play:",
+      instruction1: "🦖 Use SPACE key or click to jump",
+      instruction2: "♻️ Collect green environmental solutions for points",
+      instruction3: "💨 Avoid environmental challenges and pollution",
+      instruction4: "🎯 Play 3 games to get your final score",
       backToStart: "Back to Start",
-      startFirstGame: "Start First Game"
+      startGame: "Start Game"
     },
     nl: {
-      title: "Green Escape: Terugkeer uit de toekomst",
-      startButton: "START DE KAMER",
+      title: "Het Groene Dino Spel",
+      startButton: "START HET SPEL",
       languagePrompt: "Kies je taal:",
-      welcome: "🌍 Welkom bij de Green Escape: Terugkeer uit de toekomst",
-      intro: "Je bent net het kantoor binnengekomen van een briljante onderzoeker. Hij reisde naar de toekomst om oplossingen te vinden voor de meest urgente problemen van onze planeet—klimaatverandering, vervuiling, afval, en meer. Maar er ging iets mis...",
-      problem: "🚨 Bij zijn terugkeer raakte de onderzoeker gevangen in zijn tijdmachine!",
-      problemDesc: "Nu is het aan jou om hem te helpen.",
-      missionTitle: "Jouw missie:",
-      mission1: "🔑 Vind alle sleutels die verstopt zijn in deze kamer.",
-      mission2: "🧩 Elke sleutel wordt ontgrendeld door een mini-spel op te lossen—sommige zijn digitaal, sommige zijn fysiek.",
-      mission3: "🕵️‍♀️ Elk spel geeft je een aanwijzing voor de volgende uitdaging.",
-      mission4: "🔐 De laatste sleutel zal de tijdmachine ontgrendelen en de onderzoeker bevrijden!",
-      howToPlayTitle: "🧭 Hoe te spelen",
-      howToPlay1: "Begin waar je wilt. Er is geen enkel pad, maar je moet alle uitdagingen oplossen om de laatste sleutel te vinden.",
-      howToPlay2: "Kijk goed rond. Er zijn aanwijzingen verstopt in voorwerpen, notities, schermen, of zelfs op het eerste gezicht.",
-      howToPlay3: "Werk samen! Kinderen en ouders moeten samenwerken—twee breinen zijn beter dan één.",
-      miniGamesTitle: "Mini-Spellen voor je:",
-      miniGames1: "Sommige spellen zijn op een tablet of computer",
-      miniGames2: "Andere bevatten puzzels, verborgen berichten, of fysieke voorwerpen",
-      afterSolvingTitle: "Na het oplossen van elk mini-spel:",
-      afterSolving1: "Je krijgt een stukje informatie of een nummer",
-      afterSolving2: "Houd deze aanwijzingen bij—ze bouwen je pad naar de volgende sleutel op",
-      stuckTitle: "Als je vastzit:",
-      stuck: "Vraag een gids of kijk nog eens rond—soms zijn aanwijzingen precies waar je begon",
+      welcome: "🌍 Welkom bij Het Groene Dino Spel",
+      description: "Help onze dinosaurus vriend positieve milieu-oplossingen te verzamelen terwijl je milieu-uitdagingen vermijdt! Spring over vervuiling en gevaren, maar verzamel recycling, hernieuwbare energie en andere groene oplossingen.",
+      howToPlay: "Hoe te spelen:",
+      instruction1: "🦖 Gebruik SPATIE toets of klik om te springen",
+      instruction2: "♻️ Verzamel groene milieu-oplossingen voor punten",
+      instruction3: "💨 Vermijd milieu-uitdagingen en vervuiling",
+      instruction4: "🎯 Speel 3 spellen om je eindscore te krijgen",
       backToStart: "Terug naar Start",
-      startFirstGame: "Start Eerste Spel"
+      startGame: "Start Spel"
     }
   };
 
@@ -93,7 +66,6 @@ const Index = () => {
   const handleGameComplete = (code: string) => {
     setGameCode(code);
     setShowGame(false);
-    // Here you could navigate to the next challenge or show a success message
   };
 
   const handleBackFromGame = () => {
@@ -116,12 +88,12 @@ const Index = () => {
         <div className="relative z-10 min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
           <div className="text-center space-y-8 animate-fade-in">
             <div className="space-y-4">
-              <div className="text-6xl animate-bounce">🌍</div>
+              <div className="text-6xl animate-bounce">🦖</div>
               <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">
-                Green Escape
+                The Green Dino Game
               </h1>
               <p className="text-xl md:text-2xl text-white/90 font-medium drop-shadow">
-                Return from the future
+                Environmental Adventure
               </p>
             </div>
             
@@ -132,7 +104,7 @@ const Index = () => {
                   className="w-full h-16 text-xl font-bold bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white shadow-lg transform hover:scale-105 transition-all duration-200"
                 >
                   <ArrowRight className="mr-3 h-6 w-6" />
-                  START THE ROOM
+                  START THE GAME
                 </Button>
                 
                 <div className="text-center">
@@ -207,11 +179,11 @@ const Index = () => {
   return (
     <div className="min-h-screen relative overflow-hidden">
       <div className="relative z-10 min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 p-4">
-        <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+        <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
           <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0">
             <CardContent className="p-8">
               <div className="text-center mb-8">
-                <div className="text-5xl mb-4">🌍</div>
+                <div className="text-5xl mb-4">🦖</div>
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
                   {t.title}
                 </h1>
@@ -225,89 +197,31 @@ const Index = () => {
               <div className="space-y-6 text-lg leading-relaxed">
                 <div className="bg-green-100 p-6 rounded-xl border-l-4 border-green-500">
                   <h2 className="text-2xl font-bold text-green-800 mb-3">{t.welcome}</h2>
-                  <p className="text-gray-700">{t.intro}</p>
-                </div>
-
-                <div className="bg-red-100 p-6 rounded-xl border-l-4 border-red-500">
-                  <h3 className="text-xl font-bold text-red-800 mb-2">{t.problem}</h3>
-                  <p className="text-gray-700">{t.problemDesc}</p>
+                  <p className="text-gray-700">{t.description}</p>
                 </div>
 
                 <div className="bg-blue-100 p-6 rounded-xl border-l-4 border-blue-500">
-                  <h3 className="text-xl font-bold text-blue-800 mb-3 flex items-center">
-                    <Key className="mr-2 h-5 w-5" />
-                    {t.missionTitle}
+                  <h3 className="text-xl font-bold text-blue-800 mb-3">
+                    {t.howToPlay}
                   </h3>
-                  <ul className="space-y-2 text-gray-700">
+                  <ul className="space-y-3 text-gray-700">
                     <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      {t.mission1}
+                      <span className="mr-3 text-xl">🦖</span>
+                      {t.instruction1}
                     </li>
                     <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      {t.mission2}
+                      <span className="mr-3 text-xl">♻️</span>
+                      {t.instruction2}
                     </li>
                     <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      {t.mission3}
+                      <span className="mr-3 text-xl">💨</span>
+                      {t.instruction3}
                     </li>
                     <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      {t.mission4}
+                      <span className="mr-3 text-xl">🎯</span>
+                      {t.instruction4}
                     </li>
                   </ul>
-                </div>
-
-                <div className="bg-purple-100 p-6 rounded-xl border-l-4 border-purple-500">
-                  <h3 className="text-xl font-bold text-purple-800 mb-3 flex items-center">
-                    <Search className="mr-2 h-5 w-5" />
-                    {t.howToPlayTitle}
-                  </h3>
-                  <div className="space-y-3 text-gray-700">
-                    <p>{t.howToPlay1}</p>
-                    <p>{t.howToPlay2}</p>
-                    <p className="flex items-start">
-                      <Users className="mr-2 h-5 w-5 mt-0.5 text-purple-600" />
-                      {t.howToPlay3}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-yellow-100 p-6 rounded-xl border-l-4 border-yellow-500">
-                  <h3 className="text-xl font-bold text-yellow-800 mb-3 flex items-center">
-                    <Puzzle className="mr-2 h-5 w-5" />
-                    {t.miniGamesTitle}
-                  </h3>
-                  <ul className="space-y-2 text-gray-700 mb-4">
-                    <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      {t.miniGames1}
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      {t.miniGames2}
-                    </li>
-                  </ul>
-                  
-                  <h4 className="font-bold text-yellow-800 mb-2">{t.afterSolvingTitle}</h4>
-                  <ul className="space-y-1 text-gray-700 mb-4">
-                    <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      {t.afterSolving1}
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      {t.afterSolving2}
-                    </li>
-                  </ul>
-
-                  <div className="bg-yellow-200 p-4 rounded-lg">
-                    <h4 className="font-bold text-yellow-800 mb-2 flex items-center">
-                      <Lightbulb className="mr-2 h-4 w-4" />
-                      {t.stuckTitle}
-                    </h4>
-                    <p className="text-gray-700">{t.stuck}</p>
-                  </div>
                 </div>
               </div>
 
@@ -317,7 +231,7 @@ const Index = () => {
                   className="px-8 py-4 text-lg font-bold bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white shadow-lg transform hover:scale-105 transition-all duration-200"
                 >
                   <ArrowRight className="mr-3 h-5 w-5" />
-                  {t.startFirstGame}
+                  {t.startGame}
                 </Button>
                 
                 <Button
