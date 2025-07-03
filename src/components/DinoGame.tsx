@@ -264,7 +264,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     game.clouds = [
       { x: 200, y: 50, speed: 0.5, size: 40 },
       { x: 500, y: 80, speed: 0.3, size: 50 },
-      { x: 700, y: 40, speed: 0.7, size: 35 }
+      { x: 800, y: 40, speed: 0.7, size: 35 },
+      { x: 1000, y: 60, speed: 0.4, size: 45 }
     ];
     game.gameSpeed = 2;
     game.score = 0;
@@ -722,7 +723,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
-      <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-4xl mx-auto relative">
+      <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-6xl mx-auto relative">
         <CardContent className="p-8">
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">{t.title}</h1>
@@ -766,7 +767,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
           <div className="flex justify-center mb-6 relative">
             <canvas
               ref={canvasRef}
-              width={800}
+              width={1200}
               height={250}
               className="border-2 border-gray-300 rounded-lg bg-gradient-to-b from-blue-200 to-green-200"
               style={{ maxWidth: '100%', height: 'auto' }}
@@ -786,7 +787,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
                   key={anim.id}
                   className="absolute text-lg font-bold animate-bounce"
                   style={{
-                    left: `${(anim.x / 800) * 100}%`,
+                    left: `${(anim.x / 1200) * 100}%`,
                     top: `${(anim.y / 250) * 100}%`,
                     color: anim.color,
                     animation: 'bounce 1.5s ease-out forwards'
