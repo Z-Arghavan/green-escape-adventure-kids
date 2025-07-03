@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,12 +29,8 @@ const DINO_HEIGHT = 30;
 const GRAVITY = 0.5;
 const JUMP_SPEED = -10;
 const OBSTACLE_SPEED = 5;
-const OBSTACLE_SPAWN_RATE = 150; // Lower number = more frequent
+const OBSTACLE_SPAWN_RATE = 150;
 const SCORE_INCREMENT = 10;
-
-const getRandomNumber = (min: number, max: number): number => {
-  return Math.random() * (max - min) + min;
-};
 
 const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLanguage }) => {
   const [dinoY, setDinoY] = useState(DINO_START_Y);
@@ -54,6 +51,14 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>(0);
+  const gameStateRef = useRef({
+    dinoY: DINO_START_Y,
+    dinoYSpeed: 0,
+    isJumping: false,
+    obstacles: [] as Obstacle[],
+    score: 0,
+    gameRunning: false
+  });
 
   const translations = {
     en: {
@@ -98,7 +103,17 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   const t = translations[selectedLanguage];
 
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
+    const newGameState = {
+      dinoY: DINO_START_Y,
+      dinoYSpeed: 0,
+      isJumping: false,
+      obstacles: [],
+      score: 0,
+      gameRunning: false
+    };
+    
+    gameStateRef.current = newGameState;
     setDinoY(DINO_START_Y);
     setDinoYSpeed(0);
     setIsJumping(false);
@@ -106,85 +121,25 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     setScore(0);
     setGameRunning(false);
     setGameOver(false);
-  };
+  }, []);
 
-  const startGame = () => {
-    resetGame();
-    setGameRunning(true);
-    setGameOver(false);
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
-  };
-
-  const endGame = () => {
-    setGameRunning(false);
-    setGameOver(true);
-    cancelAnimationFrame(animationFrameRef.current);
-  };
-
-  const jump = () => {
-    if (!isJumping) {
+  const jump = useCallback(() => {
+    if (!gameStateRef.current.isJumping && gameStateRef.current.gameRunning) {
+      gameStateRef.current.isJumping = true;
+      gameStateRef.current.dinoYSpeed = JUMP_SPEED;
       setIsJumping(true);
       setDinoYSpeed(JUMP_SPEED);
     }
-  };
+  }, []);
 
-  const updateDino = () => {
-    setDinoY((prevDinoY) => {
-      const newY = prevDinoY + dinoYSpeed;
-      if (newY < DINO_START_Y) {
-        setDinoYSpeed(dinoYSpeed + GRAVITY);
-        return newY;
-      } else {
-        setIsJumping(false);
-        setDinoYSpeed(0);
-        return DINO_START_Y;
-      }
-    });
-  };
+  const endGame = useCallback(() => {
+    gameStateRef.current.gameRunning = false;
+    setGameRunning(false);
+    setGameOver(true);
+    cancelAnimationFrame(animationFrameRef.current);
+  }, []);
 
-  const updateObstacles = () => {
-    setObstacles((prevObstacles) => {
-      const newObstacles = prevObstacles.map(obstacle => ({
-        ...obstacle,
-        x: obstacle.x - obstacle.speed,
-      }));
-
-      const updatedObstacles = newObstacles.filter(obstacle => obstacle.x + obstacle.width > 0);
-
-      if (Math.random() * OBSTACLE_SPAWN_RATE < 1) {
-        updatedObstacles.push({
-          x: CANVAS_WIDTH,
-          y: CANVAS_HEIGHT - 20,
-          width: 20,
-          height: 20,
-          speed: OBSTACLE_SPEED,
-        });
-      }
-
-      return updatedObstacles;
-    });
-  };
-
-  const checkCollisions = () => {
-    for (const obstacle of obstacles) {
-      if (
-        DINO_START_X < obstacle.x + obstacle.width &&
-        DINO_START_X + DINO_WIDTH > obstacle.x &&
-        dinoY < obstacle.y + obstacle.height &&
-        dinoY + DINO_HEIGHT > obstacle.y
-      ) {
-        endGame();
-        return;
-      }
-    }
-  };
-
-  const updateScore = () => {
-    setScore((prevScore) => prevScore + SCORE_INCREMENT);
-    setHighScore((prevHighScore) => Math.max(prevHighScore, score));
-  };
-
-  const draw = () => {
+  const draw = useCallback(() => {
     if (!canvasRef.current) return;
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
@@ -193,51 +148,112 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
     // Draw Dino
     ctx.fillStyle = 'green';
-    ctx.fillRect(DINO_START_X, dinoY, DINO_WIDTH, DINO_HEIGHT);
+    ctx.fillRect(DINO_START_X, gameStateRef.current.dinoY, DINO_WIDTH, DINO_HEIGHT);
 
     // Draw Obstacles
     ctx.fillStyle = 'red';
-    obstacles.forEach(obstacle => {
+    gameStateRef.current.obstacles.forEach(obstacle => {
       ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
     });
 
     // Draw Score
     ctx.fillStyle = 'black';
     ctx.font = '16px sans-serif';
-    ctx.fillText(`${t.score}: ${score}`, 10, 20);
+    ctx.fillText(`${t.score}: ${gameStateRef.current.score}`, 10, 20);
     ctx.fillText(`${t.highScore}: ${highScore}`, 10, 40);
-  };
+  }, [t.score, t.highScore, highScore]);
 
-  const gameLoop = () => {
-    if (!gameRunning) return;
+  const checkCollisions = useCallback(() => {
+    for (const obstacle of gameStateRef.current.obstacles) {
+      if (
+        DINO_START_X < obstacle.x + obstacle.width &&
+        DINO_START_X + DINO_WIDTH > obstacle.x &&
+        gameStateRef.current.dinoY < obstacle.y + obstacle.height &&
+        gameStateRef.current.dinoY + DINO_HEIGHT > obstacle.y
+      ) {
+        endGame();
+        return;
+      }
+    }
+  }, [endGame]);
 
-    updateDino();
-    updateObstacles();
+  const gameLoop = useCallback(() => {
+    if (!gameStateRef.current.gameRunning) return;
+
+    // Update Dino Physics
+    const newY = gameStateRef.current.dinoY + gameStateRef.current.dinoYSpeed;
+    if (newY < DINO_START_Y) {
+      gameStateRef.current.dinoYSpeed += GRAVITY;
+      gameStateRef.current.dinoY = newY;
+      setDinoY(newY);
+      setDinoYSpeed(gameStateRef.current.dinoYSpeed);
+    } else {
+      gameStateRef.current.dinoY = DINO_START_Y;
+      gameStateRef.current.dinoYSpeed = 0;
+      gameStateRef.current.isJumping = false;
+      setDinoY(DINO_START_Y);
+      setDinoYSpeed(0);
+      setIsJumping(false);
+    }
+
+    // Update Obstacles
+    gameStateRef.current.obstacles = gameStateRef.current.obstacles
+      .map(obstacle => ({ ...obstacle, x: obstacle.x - obstacle.speed }))
+      .filter(obstacle => obstacle.x + obstacle.width > 0);
+
+    // Spawn new obstacles
+    if (Math.random() * OBSTACLE_SPAWN_RATE < 1) {
+      gameStateRef.current.obstacles.push({
+        x: CANVAS_WIDTH,
+        y: CANVAS_HEIGHT - 20,
+        width: 20,
+        height: 20,
+        speed: OBSTACLE_SPEED,
+      });
+    }
+
+    setObstacles([...gameStateRef.current.obstacles]);
+
+    // Update Score
+    gameStateRef.current.score += SCORE_INCREMENT;
+    setScore(gameStateRef.current.score);
+    setHighScore(Math.max(highScore, gameStateRef.current.score));
+
+    // Check Collisions
     checkCollisions();
-    updateScore();
+
+    // Draw
     draw();
 
     animationFrameRef.current = requestAnimationFrame(gameLoop);
-  };
+  }, [checkCollisions, draw, highScore]);
 
-  const handleCanvasClick = () => {
+  const startGame = useCallback(() => {
+    resetGame();
+    gameStateRef.current.gameRunning = true;
+    setGameRunning(true);
+    setGameOver(false);
+    animationFrameRef.current = requestAnimationFrame(gameLoop);
+  }, [resetGame, gameLoop]);
+
+  const handleCanvasClick = useCallback(() => {
     if (gameRunning) {
       jump();
-    } else {
+    } else if (!gameOver) {
       startGame();
     }
-  };
+  }, [gameRunning, gameOver, jump, startGame]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.code === 'Space') {
       event.preventDefault();
       if (gameRunning) {
         jump();
-      } else {
+      } else if (!gameOver) {
         startGame();
       }
     }
-  }, [gameRunning, startGame, jump]);
+  }, [gameRunning, gameOver, jump, startGame]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -248,7 +264,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   }, [handleKeyDown]);
 
   const handleRestart = () => {
-    resetGame();
     startGame();
   };
 
@@ -292,7 +307,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       if (error) {
         console.error('Error submitting score:', error);
         
-        // Check if it's a unique constraint violation
         if (error.code === '23505' && error.message.includes('unique_nickname')) {
           const suggestion = generateGreenSuggestion(nickname.trim());
           setSuggestedNickname(suggestion);
@@ -320,11 +334,15 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     }
   };
 
+  // Auto-start next game
   useEffect(() => {
-    if (currentGame > 1) {
-      startGame();
+    if (currentGame > 1 && !gameComplete) {
+      const timer = setTimeout(() => {
+        startGame();
+      }, 1000);
+      return () => clearTimeout(timer);
     }
-  }, [currentGame]);
+  }, [currentGame, gameComplete, startGame]);
 
   if (gameComplete) {
     const highestScore = Math.max(...scores);
@@ -430,7 +448,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
             width={CANVAS_WIDTH}
             height={CANVAS_HEIGHT}
             onClick={handleCanvasClick}
-            className="bg-gray-100 rounded-md shadow-md cursor-pointer"
+            className="bg-gray-100 rounded-md shadow-md cursor-pointer w-full"
+            style={{ maxWidth: '800px', height: 'auto' }}
           />
           {!gameRunning && !gameOver && (
             <div className="text-center text-gray-600">
