@@ -30,7 +30,7 @@ const GRAVITY = 0.5;
 const JUMP_SPEED = -10;
 const OBSTACLE_SPEED = 5;
 const OBSTACLE_SPAWN_RATE = 150;
-const SCORE_INCREMENT = 10;
+const SCORE_INCREMENT = 1;
 
 const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLanguage }) => {
   const [dinoY, setDinoY] = useState(DINO_START_Y);
@@ -57,13 +57,14 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     isJumping: false,
     obstacles: [] as Obstacle[],
     score: 0,
-    gameRunning: false
+    gameRunning: false,
+    frameCount: 0
   });
 
   const translations = {
     en: {
       title: "The Green Dino Game",
-      pressSpace: "Press SPACE to jump",
+      pressSpace: "Press SPACE to jump or click to start",
       score: "Score",
       highScore: "High Score",
       gameOver: "Game Over!",
@@ -82,7 +83,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     },
     nl: {
       title: "Het Groene Dino Spel",
-      pressSpace: "Druk op SPATIE om te springen",
+      pressSpace: "Druk op SPATIE om te springen of klik om te starten",
       score: "Score",
       highScore: "High Score",
       gameOver: "Game Over!",
@@ -104,16 +105,16 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const t = translations[selectedLanguage];
 
   const resetGame = useCallback(() => {
-    const newGameState = {
+    gameStateRef.current = {
       dinoY: DINO_START_Y,
       dinoYSpeed: 0,
       isJumping: false,
       obstacles: [],
       score: 0,
-      gameRunning: false
+      gameRunning: false,
+      frameCount: 0
     };
     
-    gameStateRef.current = newGameState;
     setDinoY(DINO_START_Y);
     setDinoYSpeed(0);
     setIsJumping(false);
@@ -136,7 +137,9 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     gameStateRef.current.gameRunning = false;
     setGameRunning(false);
     setGameOver(true);
-    cancelAnimationFrame(animationFrameRef.current);
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
   }, []);
 
   const draw = useCallback(() => {
@@ -144,23 +147,32 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
 
+    // Clear canvas
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
+    // Draw ground line
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, CANVAS_HEIGHT - 10);
+    ctx.lineTo(CANVAS_WIDTH, CANVAS_HEIGHT - 10);
+    ctx.stroke();
+
     // Draw Dino
-    ctx.fillStyle = 'green';
+    ctx.fillStyle = '#22c55e';
     ctx.fillRect(DINO_START_X, gameStateRef.current.dinoY, DINO_WIDTH, DINO_HEIGHT);
 
     // Draw Obstacles
-    ctx.fillStyle = 'red';
+    ctx.fillStyle = '#ef4444';
     gameStateRef.current.obstacles.forEach(obstacle => {
       ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
     });
 
     // Draw Score
-    ctx.fillStyle = 'black';
-    ctx.font = '16px sans-serif';
-    ctx.fillText(`${t.score}: ${gameStateRef.current.score}`, 10, 20);
-    ctx.fillText(`${t.highScore}: ${highScore}`, 10, 40);
+    ctx.fillStyle = '#000';
+    ctx.font = '16px Arial';
+    ctx.fillText(`${t.score}: ${gameStateRef.current.score}`, 10, 30);
+    ctx.fillText(`${t.highScore}: ${highScore}`, 10, 50);
   }, [t.score, t.highScore, highScore]);
 
   const checkCollisions = useCallback(() => {
@@ -172,28 +184,29 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
         gameStateRef.current.dinoY + DINO_HEIGHT > obstacle.y
       ) {
         endGame();
-        return;
+        return true;
       }
     }
+    return false;
   }, [endGame]);
 
   const gameLoop = useCallback(() => {
     if (!gameStateRef.current.gameRunning) return;
 
+    gameStateRef.current.frameCount++;
+
     // Update Dino Physics
-    const newY = gameStateRef.current.dinoY + gameStateRef.current.dinoYSpeed;
-    if (newY < DINO_START_Y) {
+    if (gameStateRef.current.dinoY < DINO_START_Y || gameStateRef.current.isJumping) {
       gameStateRef.current.dinoYSpeed += GRAVITY;
-      gameStateRef.current.dinoY = newY;
-      setDinoY(newY);
-      setDinoYSpeed(gameStateRef.current.dinoYSpeed);
-    } else {
-      gameStateRef.current.dinoY = DINO_START_Y;
-      gameStateRef.current.dinoYSpeed = 0;
-      gameStateRef.current.isJumping = false;
-      setDinoY(DINO_START_Y);
-      setDinoYSpeed(0);
-      setIsJumping(false);
+      gameStateRef.current.dinoY += gameStateRef.current.dinoYSpeed;
+      
+      if (gameStateRef.current.dinoY >= DINO_START_Y) {
+        gameStateRef.current.dinoY = DINO_START_Y;
+        gameStateRef.current.dinoYSpeed = 0;
+        gameStateRef.current.isJumping = false;
+        setIsJumping(false);
+      }
+      setDinoY(gameStateRef.current.dinoY);
     }
 
     // Update Obstacles
@@ -202,10 +215,10 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       .filter(obstacle => obstacle.x + obstacle.width > 0);
 
     // Spawn new obstacles
-    if (Math.random() * OBSTACLE_SPAWN_RATE < 1) {
+    if (gameStateRef.current.frameCount % OBSTACLE_SPAWN_RATE === 0) {
       gameStateRef.current.obstacles.push({
         x: CANVAS_WIDTH,
-        y: CANVAS_HEIGHT - 20,
+        y: CANVAS_HEIGHT - 30,
         width: 20,
         height: 20,
         speed: OBSTACLE_SPEED,
@@ -217,15 +230,20 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     // Update Score
     gameStateRef.current.score += SCORE_INCREMENT;
     setScore(gameStateRef.current.score);
-    setHighScore(Math.max(highScore, gameStateRef.current.score));
+    
+    // Update high score
+    if (gameStateRef.current.score > highScore) {
+      setHighScore(gameStateRef.current.score);
+    }
 
     // Check Collisions
-    checkCollisions();
-
-    // Draw
-    draw();
-
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
+    if (!checkCollisions()) {
+      // Draw
+      draw();
+      
+      // Continue game loop
+      animationFrameRef.current = requestAnimationFrame(gameLoop);
+    }
   }, [checkCollisions, draw, highScore]);
 
   const startGame = useCallback(() => {
@@ -233,35 +251,42 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     gameStateRef.current.gameRunning = true;
     setGameRunning(true);
     setGameOver(false);
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
+    gameLoop();
   }, [resetGame, gameLoop]);
 
   const handleCanvasClick = useCallback(() => {
     if (gameRunning) {
       jump();
-    } else if (!gameOver) {
+    } else if (!gameOver && !gameComplete) {
       startGame();
     }
-  }, [gameRunning, gameOver, jump, startGame]);
+  }, [gameRunning, gameOver, gameComplete, jump, startGame]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.code === 'Space') {
       event.preventDefault();
       if (gameRunning) {
         jump();
-      } else if (!gameOver) {
+      } else if (!gameOver && !gameComplete) {
         startGame();
       }
     }
-  }, [gameRunning, gameOver, jump, startGame]);
+  }, [gameRunning, gameOver, gameComplete, jump, startGame]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      cancelAnimationFrame(animationFrameRef.current);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
   }, [handleKeyDown]);
+
+  // Draw initial canvas
+  useEffect(() => {
+    draw();
+  }, [draw]);
 
   const handleRestart = () => {
     startGame();
@@ -273,7 +298,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
     if (currentGame < 3) {
       setCurrentGame(currentGame + 1);
-      startGame();
     } else {
       setGameComplete(true);
       setGameRunning(false);
@@ -333,16 +357,6 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       setNicknameError(null);
     }
   };
-
-  // Auto-start next game
-  useEffect(() => {
-    if (currentGame > 1 && !gameComplete) {
-      const timer = setTimeout(() => {
-        startGame();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [currentGame, gameComplete, startGame]);
 
   if (gameComplete) {
     const highestScore = Math.max(...scores);
@@ -436,48 +450,75 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 flex items-center justify-center p-4">
-      <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-2xl w-full">
+      <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-4xl w-full">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-gray-800">
-            {t.title}
+            {t.title} - Game {currentGame}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <canvas
-            ref={canvasRef}
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
-            onClick={handleCanvasClick}
-            className="bg-gray-100 rounded-md shadow-md cursor-pointer w-full"
-            style={{ maxWidth: '800px', height: 'auto' }}
-          />
-          {!gameRunning && !gameOver && (
-            <div className="text-center text-gray-600">
-              {t.pressSpace}
+          <div className="flex justify-center">
+            <canvas
+              ref={canvasRef}
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
+              onClick={handleCanvasClick}
+              className="bg-sky-100 rounded-lg shadow-md cursor-pointer border-2 border-gray-300"
+              style={{ maxWidth: '100%', height: 'auto' }}
+            />
+          </div>
+          
+          <div className="text-center space-y-2">
+            <div className="text-lg font-semibold">
+              {t.score}: {score} | {t.highScore}: {highScore}
             </div>
-          )}
-          {gameOver && (
-            <div className="text-center space-y-4">
-              <div className="text-2xl font-bold text-red-600">{t.gameOver}</div>
-              {currentGame < 3 ? (
-                <Button onClick={handleNextGame} className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3">
-                  {t.nextGame}
-                </Button>
-              ) : (
-                <>
-                  <div className="bg-yellow-100 p-4 rounded-xl">
-                    <p className="text-lg font-semibold text-yellow-800">
-                      {t.finalScore}: <span className="text-2xl font-bold text-yellow-600">{score}</span>
-                    </p>
-                  </div>
-                  <Button onClick={handleRestart} className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3">
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    {t.restart}
+            
+            {!gameRunning && !gameOver && (
+              <div className="text-gray-600 text-lg">
+                {t.pressSpace}
+              </div>
+            )}
+            
+            {gameOver && (
+              <div className="space-y-4">
+                <div className="text-2xl font-bold text-red-600">{t.gameOver}</div>
+                <div className="text-lg">Final Score: {score}</div>
+                
+                {currentGame < 3 ? (
+                  <Button 
+                    onClick={handleNextGame} 
+                    className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-6"
+                  >
+                    {t.nextGame}
                   </Button>
-                </>
-              )}
-            </div>
-          )}
+                ) : (
+                  <div className="space-y-4">
+                    <div className="bg-yellow-100 p-4 rounded-xl">
+                      <p className="text-lg font-semibold text-yellow-800">
+                        {t.finalScore}: <span className="text-2xl font-bold text-yellow-600">{score}</span>
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={handleNextGame} 
+                      className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-6"
+                    >
+                      Complete All Games
+                    </Button>
+                  </div>
+                )}
+                
+                <Button 
+                  onClick={handleRestart} 
+                  variant="outline"
+                  className="ml-4"
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  {t.restart}
+                </Button>
+              </div>
+            )}
+          </div>
+          
           <Button
             onClick={onBack}
             variant="outline"
