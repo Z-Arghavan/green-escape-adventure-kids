@@ -29,7 +29,7 @@ const App = () => {
   }, []);
 
   // Extract GitHub Pages base path
-  const basename = import.meta.env.PROD ? '/green-escape-kids-escape-room' : '';
+  const basename = import.meta.env.PROD ? '/green-escape-adventure-kids' : '';
 
   return (
     <QueryClientProvider client={queryClient}>

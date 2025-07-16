@@ -6,7 +6,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: mode === 'production' ? '/green-escape-kids-escape-room/' : '/',
+  base: mode === 'production' ? '/green-escape-adventure-kids/' : '/',
   server: {
     host: "::",
     port: 8080,
