@@ -28,7 +28,7 @@ This project is automatically deployed to GitHub Pages when changes are pushed t
 To run locally:
 ```bash
 npm install
-npm run dev
+npm run dev 
 ```
 
 To build for production:
