@@ -29,5 +29,7 @@ export default defineConfig(({ mode }) => ({
         manualChunks: undefined,
       },
     },
+    // Ensure HTML transformation works correctly
+    emptyOutDir: true,
   },
 }));
