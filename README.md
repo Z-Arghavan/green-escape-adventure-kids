@@ -1,5 +1,5 @@
 
-# Green Escape: Return from the Future - Kids Escape Room
+# Green Escape: Return from the Future - Kids Escape Room 
 
 An exciting escape room adventure for children aged 8-12. Help the researcher escape from his time machine and save the planet!
 
