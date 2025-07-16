@@ -47,13 +47,6 @@ jobs:
           echo "✗ favicon.ico not found in public/"
         fi
 
-    - name: List dist contents
-      run: |
-        echo "Build completed, checking output:"
-        ls -la dist/
-        echo "Assets directory:"
-        ls -la dist/assets/ || echo "No assets directory"
-
     - name: Setup Pages
       uses: actions/configure-pages@v4
       
