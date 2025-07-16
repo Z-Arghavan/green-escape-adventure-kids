@@ -54,6 +54,8 @@ jobs:
         echo "Checking if index.html exists:"
         if [ -f dist/index.html ]; then
           echo "✓ index.html found"
+          echo "Contents of index.html:"
+          head -n 30 dist/index.html
         else
           echo "✗ index.html not found"
           exit 1
