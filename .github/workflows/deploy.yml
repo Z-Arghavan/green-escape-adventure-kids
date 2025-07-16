@@ -33,12 +33,14 @@ jobs:
     - name: Install dependencies
       run: |
         npm ci
-        npm ls
 
-    - name: Build
+    - name: Build for production
       run: |
         npm run build
+        echo "Build completed, checking output:"
         ls -la dist/
+        echo "Checking if index.html exists:"
+        cat dist/index.html | head -20
       env:
         NODE_ENV: production
 
