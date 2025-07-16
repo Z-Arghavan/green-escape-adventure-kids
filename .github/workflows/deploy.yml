@@ -38,14 +38,21 @@ jobs:
       env:
         NODE_ENV: production
 
-    - name: List dist contents for debugging
+    - name: Verify build output
       run: |
         echo "Build completed, checking output:"
         ls -la dist/
-        echo "Checking for main files:"
-        find dist/ -name "*.js" -o -name "*.css" -o -name "index.html" | head -10
-        echo "Contents of dist/index.html:"
+        echo "Checking index.html content:"
         cat dist/index.html
+        echo "Checking for main assets:"
+        find dist/ -name "*.js" -o -name "*.css" -o -name "*.ico" | head -10
+        echo "Verifying no .tsx references remain:"
+        if grep -r "\.tsx" dist/; then
+          echo "ERROR: Found .tsx references in build output"
+          exit 1
+        else
+          echo "✓ No .tsx references found in build output"
+        fi
 
     - name: Setup Pages
       uses: actions/configure-pages@v4
