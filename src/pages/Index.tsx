@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -93,7 +92,7 @@ const Index = () => {
           />
         </div>
         <footer className="bg-gray-800 text-white text-center py-3 text-sm">
-          © TUe 2025
+          © 2025 TU/e - All Rights Reserved
         </footer>
       </div>
     );
@@ -160,7 +159,7 @@ const Index = () => {
         </div>
         
         <footer className="bg-gray-800 text-white text-center py-3 text-sm relative z-10">
-          © TUe 2025
+          © 2025 TU/e - All Rights Reserved
         </footer>
         
         {showGlobalLeaderboard && (
@@ -209,7 +208,7 @@ const Index = () => {
         </div>
         
         <footer className="bg-gray-800 text-white text-center py-3 text-sm relative z-10">
-          © TUe 2025
+          © 2025 TU/e - All Rights Reserved
         </footer>
       </div>
     );
@@ -295,7 +294,7 @@ const Index = () => {
       </div>
       
       <footer className="bg-gray-800 text-white text-center py-3 text-sm relative z-10">
-        © TUe 2025
+        © 2025 TU/e - All Rights Reserved
       </footer>
       
       {showGlobalLeaderboard && (
