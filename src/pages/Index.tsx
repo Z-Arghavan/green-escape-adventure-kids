@@ -84,18 +84,25 @@ const Index = () => {
 
   if (showGame && selectedLanguage) {
     return (
-      <DinoGame 
-        onGameComplete={handleGameComplete}
-        onBack={handleBackFromGame}
-        selectedLanguage={selectedLanguage}
-      />
+      <div className="min-h-screen flex flex-col">
+        <div className="flex-1">
+          <DinoGame 
+            onGameComplete={handleGameComplete}
+            onBack={handleBackFromGame}
+            selectedLanguage={selectedLanguage}
+          />
+        </div>
+        <footer className="bg-gray-800 text-white text-center py-3 text-sm">
+          © TUe 2025
+        </footer>
+      </div>
     );
   }
 
   if (!showDescription) {
     return (
-      <div className="min-h-screen relative overflow-hidden">
-        <div className="relative z-10 min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
+      <div className="min-h-screen flex flex-col relative overflow-hidden">
+        <div className="relative z-10 flex-1 bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
           <div className="text-center space-y-8 animate-fade-in">
             <div className="space-y-4">
               <div className="text-6xl animate-bounce">🦖</div>
@@ -152,6 +159,10 @@ const Index = () => {
           </div>
         </div>
         
+        <footer className="bg-gray-800 text-white text-center py-3 text-sm relative z-10">
+          © TUe 2025
+        </footer>
+        
         {showGlobalLeaderboard && (
           <GlobalLeaderboard 
             selectedLanguage={selectedLanguage || 'en'}
@@ -164,8 +175,8 @@ const Index = () => {
 
   if (!selectedLanguage) {
     return (
-      <div className="min-h-screen relative overflow-hidden">
-        <div className="relative z-10 min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
+      <div className="min-h-screen flex flex-col relative overflow-hidden">
+        <div className="relative z-10 flex-1 bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 flex items-center justify-center p-4">
           <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0 max-w-md mx-auto">
             <CardContent className="p-8 text-center space-y-6">
               <h2 className="text-2xl font-bold text-gray-800">Choose your language</h2>
@@ -196,6 +207,10 @@ const Index = () => {
             </CardContent>
           </Card>
         </div>
+        
+        <footer className="bg-gray-800 text-white text-center py-3 text-sm relative z-10">
+          © TUe 2025
+        </footer>
       </div>
     );
   }
@@ -203,8 +218,8 @@ const Index = () => {
   const t = translations[selectedLanguage];
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      <div className="relative z-10 min-h-screen bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 p-4">
+    <div className="min-h-screen flex flex-col relative overflow-hidden">
+      <div className="relative z-10 flex-1 bg-gradient-to-br from-green-400/80 via-blue-500/80 to-purple-600/80 p-4">
         <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
           <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0">
             <CardContent className="p-8">
@@ -278,6 +293,10 @@ const Index = () => {
           </Card>
         </div>
       </div>
+      
+      <footer className="bg-gray-800 text-white text-center py-3 text-sm relative z-10">
+        © TUe 2025
+      </footer>
       
       {showGlobalLeaderboard && (
         <GlobalLeaderboard 
