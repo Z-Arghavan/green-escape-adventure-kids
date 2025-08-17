@@ -84,17 +84,17 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       hit: () => soundManager.playError()
     };
 
-    // Load the Night Prowler background music
+    // Load the Night Prowler background music with correct filename
     const loadBackgroundMusic = async () => {
       try {
-        await audioManager.loadTrack('night-prowler.ogg');
+        await audioManager.loadTrack('S31-Night Prowler.ogg');
         setIsAudioLoaded(true);
         console.log('Night Prowler music loaded successfully');
       } catch (error) {
         console.error('Failed to load background music:', error);
-        // Try alternative format
+        // Try alternative format with correct name
         try {
-          await audioManager.loadTrack('night-prowler.mp3');
+          await audioManager.loadTrack('S31-Night Prowler.mp3');
           setIsAudioLoaded(true);
           console.log('Night Prowler music loaded successfully (MP3 format)');
         } catch (mp3Error) {
