@@ -35,7 +35,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const [loadedImages, setLoadedImages] = useState<{[key: string]: HTMLImageElement}>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Sound effects
+  // Sound effects and music
   const soundsRef = useRef<{
     jump: () => void;
     collect: () => void;
@@ -48,7 +48,17 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     button: () => {}
   });
 
-  // Initialize sound effects
+  const musicRef = useRef<{
+    start: () => void;
+    stop: () => void;
+    isPlaying: boolean;
+  }>({
+    start: () => {},
+    stop: () => {},
+    isPlaying: false
+  });
+
+  // Initialize sound effects and background music
   useEffect(() => {
     // Create simple sound effects using Web Audio API
     const createBeepSound = (frequency: number, duration: number, type: OscillatorType = 'sine') => {
@@ -75,12 +85,112 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       };
     };
 
+    // Create background music
+    const createBackgroundMusic = () => {
+      let audioContext: AudioContext | null = null;
+      let oscillators: OscillatorNode[] = [];
+      let gainNodes: GainNode[] = [];
+      let isPlaying = false;
+
+      const melody = [
+        { freq: 330, duration: 0.5 }, // E4
+        { freq: 370, duration: 0.5 }, // F#4
+        { freq: 392, duration: 0.5 }, // G4
+        { freq: 440, duration: 0.5 }, // A4
+        { freq: 392, duration: 0.5 }, // G4
+        { freq: 370, duration: 0.5 }, // F#4
+        { freq: 330, duration: 1.0 }, // E4
+        { freq: 294, duration: 0.5 }, // D4
+        { freq: 330, duration: 0.5 }, // E4
+        { freq: 370, duration: 1.0 }, // F#4
+      ];
+
+      const playMelody = () => {
+        if (!audioContext || !isPlaying) return;
+
+        let currentTime = audioContext.currentTime;
+        
+        melody.forEach((note, index) => {
+          const oscillator = audioContext!.createOscillator();
+          const gainNode = audioContext!.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext!.destination);
+          
+          oscillator.frequency.setValueAtTime(note.freq, currentTime);
+          oscillator.type = 'triangle';
+          
+          gainNode.gain.setValueAtTime(0, currentTime);
+          gainNode.gain.linearRampToValueAtTime(0.1, currentTime + 0.1);
+          gainNode.gain.linearRampToValueAtTime(0.05, currentTime + note.duration - 0.1);
+          gainNode.gain.linearRampToValueAtTime(0, currentTime + note.duration);
+          
+          oscillator.start(currentTime);
+          oscillator.stop(currentTime + note.duration);
+          
+          oscillators.push(oscillator);
+          gainNodes.push(gainNode);
+          
+          currentTime += note.duration;
+        });
+
+        // Schedule next loop
+        setTimeout(() => {
+          if (isPlaying) {
+            // Clear old oscillators
+            oscillators = [];
+            gainNodes = [];
+            playMelody();
+          }
+        }, melody.reduce((sum, note) => sum + note.duration, 0) * 1000);
+      };
+
+      return {
+        start: () => {
+          try {
+            if (!audioContext) {
+              audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            }
+            if (!isPlaying) {
+              isPlaying = true;
+              playMelody();
+            }
+          } catch (error) {
+            console.log('Background music not supported:', error);
+          }
+        },
+        stop: () => {
+          isPlaying = false;
+          oscillators.forEach(osc => {
+            try {
+              osc.stop();
+            } catch (e) {
+              // Oscillator might already be stopped
+            }
+          });
+          oscillators = [];
+          gainNodes = [];
+        },
+        get isPlaying() {
+          return isPlaying;
+        }
+      };
+    };
+
     // Assign sound functions
     soundsRef.current = {
       jump: createBeepSound(250, 0.2, 'square'),
       collect: createBeepSound(600, 0.3, 'sine'),
       hit: createBeepSound(200, 0.5, 'sawtooth'),
       button: createBeepSound(800, 0.15, 'triangle')
+    };
+
+    // Assign music functions
+    musicRef.current = createBackgroundMusic();
+
+    // Cleanup on unmount
+    return () => {
+      musicRef.current.stop();
     };
   }, []);
 
@@ -372,6 +482,9 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     setInventory([]);
     setAvoidedChallenges([]);
     setPointsAnimations([]);
+    
+    // Start background music when game starts
+    musicRef.current.start();
   }, []);
 
   const startGame = useCallback(() => {
@@ -608,6 +721,9 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   }, [gameState, gameLoop]);
 
   const handleRestart = async () => {
+    // Stop music when game ends
+    musicRef.current.stop();
+    
     if (gamesPlayed < 2) {
       setGameScores(prev => [...prev, score]);
       setGamesPlayed(prev => prev + 1);
@@ -748,6 +864,9 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
             <p className="text-gray-600 mb-2">{t.instructions}</p>
             <p className="text-sm text-blue-600 font-semibold mb-4">{t.spaceInstructions}</p>
             <p className="text-sm text-purple-600 font-medium">Playing as: {nickname}</p>
+            {musicRef.current.isPlaying && (
+              <p className="text-xs text-green-600 font-medium mt-2">🎵 Background music playing</p>
+            )}
           </div>
 
           {inventory.length > 0 && (
