@@ -36,10 +36,14 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Sound effects
-  const soundsRef = useRef({
-    jump: new Audio(),
-    collect: new Audio(),
-    hit: new Audio()
+  const soundsRef = useRef<{
+    jump: () => void;
+    collect: () => void;
+    hit: () => void;
+  }>({
+    jump: () => {},
+    collect: () => {},
+    hit: () => {}
   });
 
   // Initialize sound effects
@@ -377,9 +381,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       game.dino.jumpCount++;
       
       // Play jump sound
-      if (soundsRef.current.jump) {
-        soundsRef.current.jump();
-      }
+      soundsRef.current.jump();
     }
   }, []);
 
@@ -510,9 +512,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
           addPointsAnimation('+100', item.x, item.y, '#22c55e');
           
           // Play collect sound
-          if (soundsRef.current.collect) {
-            soundsRef.current.collect();
-          }
+          soundsRef.current.collect();
           
           return false;
         } else {
@@ -523,9 +523,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
           addPointsAnimation('-100', item.x, item.y, '#ef4444');
           
           // Play hit sound
-          if (soundsRef.current.hit) {
-            soundsRef.current.hit();
-          }
+          soundsRef.current.hit();
           
           if (game.hits >= 3) {
             game.gameRunning = false;
