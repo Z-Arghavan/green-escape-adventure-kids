@@ -77,7 +77,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
     // Assign sound functions
     soundsRef.current = {
-      jump: createBeepSound(400, 0.2, 'square'),
+      jump: createBeepSound(250, 0.2, 'square'),
       collect: createBeepSound(600, 0.3, 'sine'),
       hit: createBeepSound(200, 0.5, 'sawtooth'),
       button: createBeepSound(800, 0.15, 'triangle')
