@@ -35,6 +35,48 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const [loadedImages, setLoadedImages] = useState<{[key: string]: HTMLImageElement}>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Sound effects
+  const soundsRef = useRef({
+    jump: new Audio(),
+    collect: new Audio(),
+    hit: new Audio()
+  });
+
+  // Initialize sound effects
+  useEffect(() => {
+    // Create simple sound effects using Web Audio API
+    const createBeepSound = (frequency: number, duration: number, type: OscillatorType = 'sine') => {
+      return () => {
+        try {
+          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+          oscillator.type = type;
+          
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+          
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + duration);
+        } catch (error) {
+          console.log('Audio not supported:', error);
+        }
+      };
+    };
+
+    // Assign sound functions
+    soundsRef.current = {
+      jump: createBeepSound(400, 0.2, 'square'),
+      collect: createBeepSound(600, 0.3, 'sine'),
+      hit: createBeepSound(200, 0.5, 'sawtooth')
+    };
+  }, []);
+
   const translations = {
     en: {
       title: "Sustainable Dino Game",
@@ -333,6 +375,11 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       game.dino.velocityY = -18;
       game.dino.isJumping = true;
       game.dino.jumpCount++;
+      
+      // Play jump sound
+      if (soundsRef.current.jump) {
+        soundsRef.current.jump();
+      }
     }
   }, []);
 
@@ -461,6 +508,12 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
           game.score += 100;
           setScore(game.score);
           addPointsAnimation('+100', item.x, item.y, '#22c55e');
+          
+          // Play collect sound
+          if (soundsRef.current.collect) {
+            soundsRef.current.collect();
+          }
+          
           return false;
         } else {
           game.hits += 1;
@@ -468,6 +521,11 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
           setScore(game.score);
           setHits(game.hits);
           addPointsAnimation('-100', item.x, item.y, '#ef4444');
+          
+          // Play hit sound
+          if (soundsRef.current.hit) {
+            soundsRef.current.hit();
+          }
           
           if (game.hits >= 3) {
             game.gameRunning = false;
