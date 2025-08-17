@@ -1,0 +1,7 @@
+
+// This is a placeholder - you'll need to download the actual "Night Prowler" file from:
+// https://opengameart.org/content/night-prowler
+// and place it in this location as night-prowler.ogg or night-prowler.mp3
+// 
+// The audio manager will automatically handle loading this file when the game starts.
+// Make sure to download the file and place it in public/audio/night-prowler.ogg
