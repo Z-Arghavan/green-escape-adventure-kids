@@ -692,7 +692,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
                 {inventory.map((item, index) => (
                   <span key={index} className="bg-white px-3 py-1 rounded-full text-sm border flex items-center gap-2">
                     {loadedImages[item.type] && (
-                      <img src={item.type} alt={item.name} className="w-6 h-6" />
+                      <img src={getImagePath(item.type)} alt={item.name} className="w-6 h-6" />
                     )}
                     {item.name}
                   </span>
@@ -708,7 +708,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
                 {avoidedChallenges.map((item, index) => (
                   <span key={index} className="bg-white px-3 py-1 rounded-full text-sm border flex items-center gap-2">
                     {loadedImages[item.type] && (
-                      <img src={item.type} alt={item.name} className="w-6 h-6" />
+                      <img src={getImagePath(item.type)} alt={item.name} className="w-6 h-6" />
                     )}
                     {item.name}
                   </span>
