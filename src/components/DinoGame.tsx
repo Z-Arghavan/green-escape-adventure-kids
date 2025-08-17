@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, RotateCcw, Trophy, User, Volume2, VolumeX } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { soundManager } from '@/utils/soundUtils';
 
 interface DinoGameProps {
   onGameComplete: () => void;
@@ -36,17 +37,15 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMusicEnabled, setIsMusicEnabled] = useState(true);
 
-  // Sound effects and music
+  // Sound effects - now using global sound manager
   const soundsRef = useRef<{
     jump: () => void;
     collect: () => void;
     hit: () => void;
-    button: () => void;
   }>({
     jump: () => {},
     collect: () => {},
-    hit: () => {},
-    button: () => {}
+    hit: () => {}
   });
 
   const musicRef = useRef<{
@@ -59,9 +58,9 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     isPlaying: false
   });
 
-  // Initialize sound effects and background music
+  // Initialize sound effects using global sound manager
   useEffect(() => {
-    // Create simple sound effects using Web Audio API
+    // Create simple sound effects using the global sound manager
     const createBeepSound = (frequency: number, duration: number, type: OscillatorType = 'sine') => {
       return () => {
         try {
@@ -178,12 +177,11 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       };
     };
 
-    // Assign sound functions
+    // Assign sound functions - using global sound manager for consistency
     soundsRef.current = {
       jump: createBeepSound(250, 0.2, 'square'),
-      collect: createBeepSound(600, 0.3, 'sine'),
-      hit: createBeepSound(200, 0.5, 'sawtooth'),
-      button: createBeepSound(800, 0.15, 'triangle')
+      collect: () => soundManager.playSuccess(),
+      hit: () => soundManager.playError()
     };
 
     // Assign music functions
@@ -262,9 +260,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   const t = translations[selectedLanguage];
 
-  // Helper function for button clicks with sound
+  // Helper function for button clicks - removed since global Button now handles sounds
   const handleButtonClick = useCallback((callback: () => void) => {
-    soundsRef.current.button();
     callback();
   }, []);
 
