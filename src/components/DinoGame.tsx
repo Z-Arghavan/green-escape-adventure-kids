@@ -691,9 +691,15 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
               <div className="flex flex-wrap gap-2">
                 {inventory.map((item, index) => (
                   <span key={index} className="bg-white px-3 py-1 rounded-full text-sm border flex items-center gap-2">
-                    {loadedImages[item.type] && (
-                      <img src={getImagePath(item.type)} alt={item.name} className="w-6 h-6" />
-                    )}
+                    <img 
+                      src={getImagePath(item.type)} 
+                      alt={item.name} 
+                      className="w-6 h-6"
+                      onError={(e) => {
+                        console.log('Image failed to load in inventory:', item.type);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                     {item.name}
                   </span>
                 ))}
@@ -707,9 +713,15 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
               <div className="flex flex-wrap gap-2">
                 {avoidedChallenges.map((item, index) => (
                   <span key={index} className="bg-white px-3 py-1 rounded-full text-sm border flex items-center gap-2">
-                    {loadedImages[item.type] && (
-                      <img src={getImagePath(item.type)} alt={item.name} className="w-6 h-6" />
-                    )}
+                    <img 
+                      src={getImagePath(item.type)} 
+                      alt={item.name} 
+                      className="w-6 h-6"
+                      onError={(e) => {
+                        console.log('Image failed to load in avoided challenges:', item.type);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                     {item.name}
                   </span>
                 ))}
