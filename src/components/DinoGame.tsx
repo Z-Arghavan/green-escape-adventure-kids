@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, RotateCcw, Trophy, User } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Trophy, User, Volume2, VolumeX } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DinoGameProps {
@@ -34,6 +34,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   const [pointsAnimations, setPointsAnimations] = useState<Array<{id: number, points: string, x: number, y: number, color: string}>>([]);
   const [loadedImages, setLoadedImages] = useState<{[key: string]: HTMLImageElement}>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMusicEnabled, setIsMusicEnabled] = useState(true);
 
   // Sound effects and music
   const soundsRef = useRef<{
@@ -223,7 +224,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       finalScore: "Final Score",
       highestGameScore: "Highest Game Score",
       continue: "Continue",
-      submittingScore: "Submitting score..."
+      submittingScore: "Submitting score...",
+      toggleMusic: "Toggle Music"
     },
     nl: {
       title: "Duurzame Dino Spel",
@@ -253,7 +255,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       finalScore: "EindScore",
       highestGameScore: "Hoogste Spel Score",
       continue: "Doorgaan",
-      submittingScore: "Score indienen..."
+      submittingScore: "Score indienen...",
+      toggleMusic: "Muziek Aan/Uit"
     }
   };
 
@@ -264,6 +267,19 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     soundsRef.current.button();
     callback();
   }, []);
+
+  // Toggle music function
+  const toggleMusic = useCallback(() => {
+    setIsMusicEnabled(prev => {
+      const newValue = !prev;
+      if (newValue && gameState === 'playing') {
+        musicRef.current.start();
+      } else {
+        musicRef.current.stop();
+      }
+      return newValue;
+    });
+  }, [gameState]);
 
   // Helper function to get correct image path for production
   const getImagePath = useCallback((imagePath: string) => {
@@ -483,9 +499,11 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     setAvoidedChallenges([]);
     setPointsAnimations([]);
     
-    // Start background music when game starts
-    musicRef.current.start();
-  }, []);
+    // Start background music when game starts if enabled
+    if (isMusicEnabled) {
+      musicRef.current.start();
+    }
+  }, [isMusicEnabled]);
 
   const startGame = useCallback(() => {
     resetGame();
@@ -863,10 +881,18 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
             <h1 className="text-3xl font-bold text-gray-800 mb-2">{t.title}</h1>
             <p className="text-gray-600 mb-2">{t.instructions}</p>
             <p className="text-sm text-blue-600 font-semibold mb-4">{t.spaceInstructions}</p>
-            <p className="text-sm text-purple-600 font-medium">Playing as: {nickname}</p>
-            {musicRef.current.isPlaying && (
-              <p className="text-xs text-green-600 font-medium mt-2">🎵 Background music playing</p>
-            )}
+            <div className="flex items-center justify-center gap-4">
+              <p className="text-sm text-purple-600 font-medium">Playing as: {nickname}</p>
+              <Button
+                onClick={() => handleButtonClick(toggleMusic)}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                title={t.toggleMusic}
+              >
+                {isMusicEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
 
           {inventory.length > 0 && (
