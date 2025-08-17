@@ -86,46 +86,66 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       };
     };
 
-    // Create fun background music - more upbeat and playful
+    // Create fast-paced, energetic background music
     const createBackgroundMusic = () => {
       let audioContext: AudioContext | null = null;
       let oscillators: OscillatorNode[] = [];
       let gainNodes: GainNode[] = [];
       let isPlaying = false;
 
-      // Fun, upbeat melody with rhythm
+      // Fast, energetic melody with shorter note durations
       const melody = [
-        // Main melody line
-        { freq: 523, duration: 0.3, volume: 0.15 }, // C5
-        { freq: 587, duration: 0.3, volume: 0.15 }, // D5
-        { freq: 659, duration: 0.4, volume: 0.18 }, // E5
-        { freq: 698, duration: 0.2, volume: 0.12 }, // F5
-        { freq: 784, duration: 0.6, volume: 0.2 },  // G5
-        { freq: 659, duration: 0.3, volume: 0.15 }, // E5
-        { freq: 523, duration: 0.5, volume: 0.18 }, // C5
+        // Fast opening riff
+        { freq: 659, duration: 0.15, volume: 0.18 }, // E5
+        { freq: 784, duration: 0.15, volume: 0.2 },  // G5
+        { freq: 880, duration: 0.2, volume: 0.22 },  // A5
+        { freq: 1047, duration: 0.1, volume: 0.15 }, // C6
+        { freq: 880, duration: 0.15, volume: 0.18 }, // A5
+        { freq: 784, duration: 0.1, volume: 0.15 },  // G5
         
-        // Bounce section
-        { freq: 440, duration: 0.2, volume: 0.12 }, // A4
-        { freq: 523, duration: 0.2, volume: 0.12 }, // C5
-        { freq: 587, duration: 0.2, volume: 0.12 }, // D5
-        { freq: 659, duration: 0.4, volume: 0.15 }, // E5
-        { freq: 784, duration: 0.3, volume: 0.18 }, // G5
-        { freq: 880, duration: 0.5, volume: 0.2 },  // A5
+        // Bouncy middle section
+        { freq: 523, duration: 0.1, volume: 0.15 }, // C5
+        { freq: 659, duration: 0.1, volume: 0.15 }, // E5
+        { freq: 784, duration: 0.15, volume: 0.18 }, // G5
+        { freq: 880, duration: 0.1, volume: 0.15 }, // A5
+        { freq: 1047, duration: 0.2, volume: 0.2 },  // C6
+        { freq: 1175, duration: 0.15, volume: 0.18 }, // D6
         
-        // Playful ending
-        { freq: 784, duration: 0.3, volume: 0.15 }, // G5
-        { freq: 659, duration: 0.3, volume: 0.15 }, // E5
-        { freq: 523, duration: 0.6, volume: 0.18 }  // C5
+        // Fast descending run
+        { freq: 1319, duration: 0.08, volume: 0.15 }, // E6
+        { freq: 1175, duration: 0.08, volume: 0.15 }, // D6
+        { freq: 1047, duration: 0.08, volume: 0.15 }, // C6
+        { freq: 880, duration: 0.08, volume: 0.15 },  // A5
+        { freq: 784, duration: 0.12, volume: 0.18 },  // G5
+        { freq: 659, duration: 0.15, volume: 0.2 },   // E5
+        
+        // Energetic ending
+        { freq: 523, duration: 0.1, volume: 0.15 }, // C5
+        { freq: 784, duration: 0.1, volume: 0.15 }, // G5
+        { freq: 1047, duration: 0.2, volume: 0.22 }, // C6
+        { freq: 880, duration: 0.15, volume: 0.18 }  // A5
       ];
 
+      // Fast bass line with more rhythm
       const bassLine = [
-        { freq: 131, duration: 0.8, volume: 0.1 },  // C3
-        { freq: 147, duration: 0.8, volume: 0.1 },  // D3
-        { freq: 196, duration: 0.8, volume: 0.1 },  // G3
-        { freq: 220, duration: 0.8, volume: 0.1 },  // A3
-        { freq: 131, duration: 1.2, volume: 0.12 }, // C3
-        { freq: 175, duration: 0.8, volume: 0.1 },  // F3
-        { freq: 196, duration: 1.0, volume: 0.1 }   // G3
+        { freq: 131, duration: 0.3, volume: 0.12 }, // C3
+        { freq: 131, duration: 0.15, volume: 0.08 }, // C3
+        { freq: 175, duration: 0.3, volume: 0.12 }, // F3
+        { freq: 196, duration: 0.15, volume: 0.1 },  // G3
+        { freq: 220, duration: 0.3, volume: 0.12 }, // A3
+        { freq: 220, duration: 0.15, volume: 0.08 }, // A3
+        { freq: 147, duration: 0.3, volume: 0.12 }, // D3
+        { freq: 196, duration: 0.2, volume: 0.1 }   // G3
+      ];
+
+      // Fast percussion-like rhythm
+      const percussionPattern = [
+        { freq: 60, duration: 0.05, volume: 0.08, delay: 0 },
+        { freq: 80, duration: 0.03, volume: 0.06, delay: 0.15 },
+        { freq: 60, duration: 0.05, volume: 0.08, delay: 0.3 },
+        { freq: 100, duration: 0.03, volume: 0.05, delay: 0.4 },
+        { freq: 60, duration: 0.05, volume: 0.08, delay: 0.6 },
+        { freq: 80, duration: 0.03, volume: 0.06, delay: 0.75 }
       ];
 
       const playMelody = () => {
@@ -133,7 +153,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
         let currentTime = audioContext.currentTime;
         
-        // Play main melody
+        // Play main melody with faster tempo
         melody.forEach((note, index) => {
           const oscillator = audioContext!.createOscillator();
           const gainNode = audioContext!.createGain();
@@ -142,11 +162,11 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
           gainNode.connect(audioContext!.destination);
           
           oscillator.frequency.setValueAtTime(note.freq, currentTime);
-          oscillator.type = 'triangle'; // Warmer sound
+          oscillator.type = 'triangle';
           
           gainNode.gain.setValueAtTime(0, currentTime);
-          gainNode.gain.linearRampToValueAtTime(note.volume, currentTime + 0.05);
-          gainNode.gain.linearRampToValueAtTime(note.volume * 0.7, currentTime + note.duration - 0.1);
+          gainNode.gain.linearRampToValueAtTime(note.volume, currentTime + 0.02);
+          gainNode.gain.linearRampToValueAtTime(note.volume * 0.7, currentTime + note.duration - 0.05);
           gainNode.gain.linearRampToValueAtTime(0, currentTime + note.duration);
           
           oscillator.start(currentTime);
@@ -158,8 +178,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
           currentTime += note.duration;
         });
 
-        // Play bass line (offset slightly for rhythm)
-        let bassTime = audioContext.currentTime + 0.1;
+        // Play fast bass line
+        let bassTime = audioContext.currentTime + 0.05;
         bassLine.forEach((note, index) => {
           const oscillator = audioContext!.createOscillator();
           const gainNode = audioContext!.createGain();
@@ -168,11 +188,11 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
           gainNode.connect(audioContext!.destination);
           
           oscillator.frequency.setValueAtTime(note.freq, bassTime);
-          oscillator.type = 'sawtooth'; // Fuller bass sound
+          oscillator.type = 'sawtooth';
           
           gainNode.gain.setValueAtTime(0, bassTime);
-          gainNode.gain.linearRampToValueAtTime(note.volume, bassTime + 0.1);
-          gainNode.gain.linearRampToValueAtTime(note.volume * 0.5, bassTime + note.duration - 0.2);
+          gainNode.gain.linearRampToValueAtTime(note.volume, bassTime + 0.05);
+          gainNode.gain.linearRampToValueAtTime(note.volume * 0.3, bassTime + note.duration - 0.1);
           gainNode.gain.linearRampToValueAtTime(0, bassTime + note.duration);
           
           oscillator.start(bassTime);
@@ -184,39 +204,65 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
           bassTime += note.duration;
         });
 
-        // Add some rhythmic percussion-like sounds
-        const percTime = audioContext.currentTime + 0.2;
-        for (let i = 0; i < 8; i++) {
+        // Add fast percussion pattern
+        const percTime = audioContext.currentTime + 0.1;
+        percussionPattern.forEach((perc) => {
           const oscillator = audioContext!.createOscillator();
           const gainNode = audioContext!.createGain();
           
           oscillator.connect(gainNode);
           gainNode.connect(audioContext!.destination);
           
-          oscillator.frequency.setValueAtTime(80, percTime + i * 0.5);
+          const startTime = percTime + perc.delay;
+          oscillator.frequency.setValueAtTime(perc.freq, startTime);
           oscillator.type = 'square';
           
-          gainNode.gain.setValueAtTime(0, percTime + i * 0.5);
-          gainNode.gain.linearRampToValueAtTime(0.05, percTime + i * 0.5 + 0.01);
-          gainNode.gain.exponentialRampToValueAtTime(0.001, percTime + i * 0.5 + 0.1);
+          gainNode.gain.setValueAtTime(0, startTime);
+          gainNode.gain.linearRampToValueAtTime(perc.volume, startTime + 0.005);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + perc.duration);
           
-          oscillator.start(percTime + i * 0.5);
-          oscillator.stop(percTime + i * 0.5 + 0.1);
+          oscillator.start(startTime);
+          oscillator.stop(startTime + perc.duration);
           
           oscillators.push(oscillator);
           gainNodes.push(gainNode);
-        }
+        });
 
-        // Schedule next loop
+        // Add high-energy arpeggios
+        const arpeggioNotes = [659, 784, 880, 1047, 880, 784]; // E-G-A-C-A-G
+        let arpeggioTime = audioContext.currentTime + 0.2;
+        arpeggioNotes.forEach((freq, index) => {
+          const oscillator = audioContext!.createOscillator();
+          const gainNode = audioContext!.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext!.destination);
+          
+          oscillator.frequency.setValueAtTime(freq, arpeggioTime);
+          oscillator.type = 'sine';
+          
+          gainNode.gain.setValueAtTime(0, arpeggioTime);
+          gainNode.gain.linearRampToValueAtTime(0.1, arpeggioTime + 0.01);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, arpeggioTime + 0.12);
+          
+          oscillator.start(arpeggioTime);
+          oscillator.stop(arpeggioTime + 0.12);
+          
+          oscillators.push(oscillator);
+          gainNodes.push(gainNode);
+          
+          arpeggioTime += 0.08; // Fast arpeggios
+        });
+
+        // Schedule next loop with shorter duration for faster pace
         const totalDuration = melody.reduce((sum, note) => sum + note.duration, 0);
         setTimeout(() => {
           if (isPlaying) {
-            // Clear old oscillators
             oscillators = [];
             gainNodes = [];
             playMelody();
           }
-        }, totalDuration * 1000);
+        }, totalDuration * 800); // Faster loop timing
       };
 
       return {
@@ -251,7 +297,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
       };
     };
 
-    // Assign sound functions - using global sound manager for consistency
+    // Assign sound functions
     soundsRef.current = {
       jump: createBeepSound(250, 0.2, 'square'),
       collect: () => soundManager.playSuccess(),
