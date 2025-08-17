@@ -40,10 +40,12 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     jump: () => void;
     collect: () => void;
     hit: () => void;
+    button: () => void;
   }>({
     jump: () => {},
     collect: () => {},
-    hit: () => {}
+    hit: () => {},
+    button: () => {}
   });
 
   // Initialize sound effects
@@ -77,7 +79,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     soundsRef.current = {
       jump: createBeepSound(400, 0.2, 'square'),
       collect: createBeepSound(600, 0.3, 'sine'),
-      hit: createBeepSound(200, 0.5, 'sawtooth')
+      hit: createBeepSound(200, 0.5, 'sawtooth'),
+      button: createBeepSound(800, 0.15, 'triangle')
     };
   }, []);
 
@@ -145,6 +148,12 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
   };
 
   const t = translations[selectedLanguage];
+
+  // Helper function for button clicks with sound
+  const handleButtonClick = useCallback((callback: () => void) => {
+    soundsRef.current.button();
+    callback();
+  }, []);
 
   // Helper function to get correct image path for production
   const getImagePath = useCallback((imagePath: string) => {
@@ -281,7 +290,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   const handleNicknameSubmit = () => {
     if (nickname.trim()) {
-      setGameState('waiting');
+      handleButtonClick(() => setGameState('waiting'));
     }
   };
 
@@ -561,7 +570,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
         if (gameState === 'playing') {
           jump();
         } else if (gameState === 'waiting') {
-          startGame();
+          handleButtonClick(startGame);
         }
       }
     };
@@ -584,7 +593,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
         canvas.removeEventListener('click', handleClick);
       }
     };
-  }, [gameState, jump, startGame]);
+  }, [gameState, jump, startGame, handleButtonClick]);
 
   useEffect(() => {
     if (gameState === 'playing') {
@@ -602,21 +611,21 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     if (gamesPlayed < 2) {
       setGameScores(prev => [...prev, score]);
       setGamesPlayed(prev => prev + 1);
-      resetGame();
+      handleButtonClick(resetGame);
     } else {
       setGameScores(prev => [...prev, score]);
       setGamesPlayed(3);
       await saveToSupabase();
-      onGameComplete();
+      handleButtonClick(onGameComplete);
     }
   };
 
   const handleViewScoreboard = () => {
-    setShowScoreboard(true);
+    handleButtonClick(() => setShowScoreboard(true));
   };
 
   const handleBackToGame = () => {
-    setShowScoreboard(false);
+    handleButtonClick(() => setShowScoreboard(false));
   };
 
   // Nickname input screen
@@ -654,7 +663,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
             </div>
             
             <Button 
-              onClick={onBack}
+              onClick={() => handleButtonClick(onBack)}
               variant="outline"
               className="w-full"
             >
@@ -823,7 +832,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
           <div className="text-center space-y-4">
             {gameState === 'waiting' && (
               <Button 
-                onClick={startGame}
+                onClick={() => handleButtonClick(startGame)}
                 className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold px-8 py-3 text-lg"
               >
                 {t.start}
@@ -833,7 +842,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
             {gameState === 'playing' && (
               <div className="space-y-3">
                 <Button 
-                  onClick={restartCurrentGame}
+                  onClick={() => handleButtonClick(restartCurrentGame)}
                   variant="outline"
                   className="mx-2"
                 >
@@ -877,7 +886,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
                     </Button>
                   )}
                   <Button 
-                    onClick={restartCurrentGame}
+                    onClick={() => handleButtonClick(restartCurrentGame)}
                     variant="outline"
                   >
                     <RotateCcw className="mr-2 h-4 w-4" />
@@ -895,7 +904,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
             )}
 
             <Button 
-              onClick={onBack}
+              onClick={() => handleButtonClick(onBack)}
               variant="outline"
               className="ml-4"
             >
