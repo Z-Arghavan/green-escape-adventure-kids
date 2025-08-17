@@ -42,10 +42,12 @@ jobs:
       run: |
         echo "Build completed, checking output:"
         ls -la dist/
+        echo "Checking for lovable-uploads directory:"
+        ls -la dist/lovable-uploads/ || echo "lovable-uploads directory not found"
         echo "Checking index.html content:"
         cat dist/index.html
         echo "Checking for main assets:"
-        find dist/ -name "*.js" -o -name "*.css" -o -name "*.ico" | head -10
+        find dist/ -name "*.js" -o -name "*.css" -o -name "*.ico" -o -name "*.png" | head -20
         echo "Verifying no .tsx references remain:"
         if grep -r "\.tsx" dist/; then
           echo "ERROR: Found .tsx references in build output"

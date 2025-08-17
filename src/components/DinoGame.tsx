@@ -100,6 +100,12 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
 
   const t = translations[selectedLanguage];
 
+  // Helper function to get correct image path for production
+  const getImagePath = useCallback((imagePath: string) => {
+    const basePath = import.meta.env.MODE === 'production' ? '/green-escape-adventure-kids' : '';
+    return `${basePath}${imagePath}`;
+  }, []);
+
   // Game objects
   const gameRef = useRef({
     dino: { x: 50, y: 200, width: 50, height: 50, velocityY: 0, isJumping: false, jumpCount: 0 },
@@ -249,7 +255,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
             console.error('Failed to load image:', item.type, error);
             reject(error);
           };
-          img.src = item.type;
+          // Use the helper function to get correct path
+          img.src = getImagePath(item.type);
         });
       });
 
@@ -267,7 +274,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
     };
 
     loadImages();
-  }, []);
+  }, [getImagePath]);
 
   const addPointsAnimation = useCallback((points: string, x: number, y: number, color: string) => {
     const id = Date.now() + Math.random();
