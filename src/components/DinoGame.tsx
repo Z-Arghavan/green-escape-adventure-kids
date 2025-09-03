@@ -777,12 +777,24 @@ const DinoGame: React.FC<DinoGameProps> = ({ onGameComplete, onBack, selectedLan
                   {t.highestGameScore}: {getHighestGameScore()}
                 </p>
               </div>
-              <Button 
-                onClick={handleBackToGame}
-                className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold"
-              >
-                {t.backToGame}
-              </Button>
+              <div className="flex gap-2 justify-center">
+                <Button 
+                  onClick={handleBackToGame}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  {t.backToGame}
+                </Button>
+                {gamesPlayed >= 3 && (
+                  <Button 
+                    onClick={() => handleButtonClick(onGameComplete)}
+                    className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    {t.back}
+                  </Button>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
